@@ -1,84 +1,96 @@
-# Turborepo starter
+# MoM Management System
 
-This Turborepo starter is maintained by the Turborepo core team.
+This is a Minutes of Meeting (MoM) Management System designed to streamline the process of creating, reviewing, approving, and managing meeting notes across projects. The system allows project administrators (Super Admin) to manage users, while the MoM Creators, Reviewers, and Approvers handle the process of creating and finalizing MoMs for projects.
 
-## Using this example
+## Project Structure
 
-Run the following command:
+This project follows a monorepo structure using TurboRepo for managing multiple apps and packages in one repository.
 
-```sh
-npx create-turbo@latest
+### Directory Structure
+
+```bash
+mom-management/
+├── .gitignore
+├── package.json
+├── turbo.json
+├── README.md
+├── apps/
+│   ├── backend/       # Backend API (NestJS with PrismaORM)
+│   ├── frontend/      # Frontend (NextJS)
+├── packages/
+│   ├── eslint-config/ # Shared ESLint configuration
+│   ├── typescript-config/ # Shared TypeScript configuration
 ```
 
-## What's inside?
+## Features
 
-This Turborepo includes the following packages/apps:
+### 1. Project Management
+- Super Admin can create and manage projects, assign roles, and onboard users
+- Each project has its own set of roles: MoM Creators, Reviewers, and Approvers
 
-### Apps and Packages
+### 2. MoM Management
+- MoM Creators can create and submit MoMs
+- MoMs can be created from scratch or by pulling topics from previous MoMs within the same project-
+- Reviewers can approve or reject MoMs, add comments
+- Approvers can finalize MoMs and trigger PDF generation for download
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### 3. User Management
+- Admin users can send email invitations to onboard new users
+- Users can update their profile details and reset passwords
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### 4. Notifications
+- Email notifications are sent for MoM submission, review, approval, and updates
+- Users are notified when they are assigned to a MoM or when their action is required
 
-### Utilities
+## Installation
 
-This Turborepo has some additional tools already setup for you:
+### Prerequisites
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+Before you begin, ensure you have the following installed:
 
-### Build
+- Node.js (v18 or above)
+- npm or yarn (preferably npm)
 
-To build all apps and packages, run the following command:
+### Setup
 
-```
-cd my-turborepo
-pnpm build
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
+1. Clone the repository:
+```bash
+git clone https://github.com/Dhanush1357/meeting-minutes.git
+cd mom-management
 ```
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
+2. Install dependencies for the entire project using TurboRepo:
+```bash
+npm install
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
+3. Set up the environment variables in a `.env` file in the root of backend folder. The following environment variables are required:
+```bash
+DATABASE_URL=your_database_url
 ```
 
-## Useful Links
+4. Run the development environment in the root of the project:
+```bash
+npm run dev
+```
 
-Learn more about the power of Turborepo:
+This will start all apps (backend, frontend, etc.) in development mode.
 
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+## Folder Structure
+
+### Apps
+- `apps/backend/`: The backend API built with NestJS. This handles user authentication, project and MoM management, and PDF generation.
+- `apps/frontend/`: The frontend built with Next.js and React. This provides the UI for managing MoMs and viewing project details.
+
+### Packages
+- `packages/eslint-config/`: Shared ESLint configuration for the entire repo.
+- `packages/typescript-config/`: Shared TypeScript configuration for all apps and packages.
+
+## Contributing
+
+1. Fork the repository
+2. Create a new branch for your feature/bugfix
+3. Write tests for new features or bug fixes
+4. Make changes to the code
+5. Run the tests and ensure everything works
+6. Create a pull request
