@@ -1,0 +1,27 @@
+// User Models and ENUMS
+model User {
+  id         Int       @id @default(autoincrement())
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+  is_active  Boolean   @default(true)
+
+  email            String   @unique
+  password         String
+  first_name       String?
+  last_name        String?
+  role             UserRole
+  profile_complete Boolean  @default(false)
+
+  projects         CategoriesOnProjects[] // Represents the many-to-many relation with additional data
+  created_projects Project[]              @relation("UserCreatedProjects") // Reverse relation for 'created_by'
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  CREATOR
+  REVIEWER
+  APPROVER
+  CLIENT
+  VENDOR
+  PARTICIPANT
+}

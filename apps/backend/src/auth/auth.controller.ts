@@ -1,17 +1,28 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { UserRole } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() body) {
+  async login(@Body() body: { email: string; password: string }) {
     return this.authService.login(body.email, body.password);
   }
 
-  @Post('register')
-  async register(@Body() body) {
-    return this.authService.register(body.email, body.password);
+  @Post('signup')
+  async signup(@Body() body: { email: string; password: string, role: UserRole }) {
+    return this.authService.signup(body.email, body.password, body.role);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: { email: string }) {
+    return this.authService.forgotPasswordMail(body.email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: { resetToken: string; newPassword: string }) {
+    return this.authService.resetPassword(body.resetToken, body.newPassword);
   }
 }
