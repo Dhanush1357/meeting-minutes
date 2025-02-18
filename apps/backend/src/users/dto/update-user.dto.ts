@@ -8,4 +8,6 @@ export class UpdateUserDto {
   last_name?: string;
 
   password?: string;
+
+  profile_complete?: boolean;
 }

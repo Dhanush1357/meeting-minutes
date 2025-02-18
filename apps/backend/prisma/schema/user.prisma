@@ -14,6 +14,7 @@ model User {
 
   projects         CategoriesOnProjects[] // Represents the many-to-many relation with additional data
   created_projects Project[]              @relation("UserCreatedProjects") // Reverse relation for 'created_by'
+  created_moms     MoM[]                  @relation("UserCreatedMoms") // Reverse relation for 'created_by'
 }
 
 enum UserRole {

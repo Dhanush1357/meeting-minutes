@@ -24,4 +24,18 @@ export class MailService {
       throw new Error(`Failed to send reset password email: ${error.message}`);
     }
   }
+
+  async sendWelcomeEmail(to: string, username: string, password: string) {
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to,
+        subject: 'Welcome to our platform!',
+        text: `Your login details are: username - ${username}, password - ${password}`,
+      };
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      throw new Error(`Failed to send welcome email: ${error.message}`);
+    }
+  }
 }

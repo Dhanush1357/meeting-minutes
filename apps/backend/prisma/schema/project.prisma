@@ -16,6 +16,7 @@ model Project {
   status ProjectStatus @default(OPEN)
 
   user_roles CategoriesOnProjects[] // This table connects users to projects with their roles
+  MoM        MoM[]
 }
 
 enum ProjectStatus {
@@ -29,7 +30,7 @@ model CategoriesOnProjects {
   user        User     @relation(fields: [user_id], references: [id])
   user_id     Int // relation scalar field (used in the `@relation` attribute above)
   assigned_at DateTime @default(now())
-  assigned_by String
+  assigned_by Int
 
   role UserRole // Specific role for the user in the project (CREATOR, REVIEWER, etc.)
 

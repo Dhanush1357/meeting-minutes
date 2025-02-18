@@ -1,0 +1,28 @@
+// MoM Models and ENUMS
+
+model MoM {
+  id         Int       @id @default(autoincrement())
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+  is_active  Boolean   @default(true)
+
+  // creator information
+  creator_id Int
+  created_by User @relation("UserCreatedMoms", fields: [creator_id], references: [id])
+
+  title  String
+  status MoMStatus @default(CREATED)
+
+  // Relations
+  project_id Int
+  project    Project @relation(fields: [project_id], references: [id])
+}
+
+enum MoMStatus {
+  CREATED
+  IN_REVIEW
+  AWAITING_APPROVAL
+  APPROVED
+  NEEDS_REVISION
+  CLOSED
+}

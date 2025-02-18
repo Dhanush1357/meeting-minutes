@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import RootLayoutClient from "./RootLayoutClient";
+import Navbar from "@/components/navbar/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,11 +16,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Meeting Minutes",
-  description: "Meeting minutes management system for tracking discussions, open issues, updates and notes from meetings",
+  description:
+    "Meeting minutes management system for tracking discussions, open issues, updates and notes from meetings",
   generator: "Next.js",
   manifest: "/manifest.json",
   keywords: ["nextjs", "next14", "pwa", "next-pwa"],
-  themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#fff" }],
   viewport:
     "minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover",
   icons: [
@@ -36,9 +37,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <RootLayoutClient>{children}</RootLayoutClient>
+        <Navbar />
+        <div className="pt-16">
+          <RootLayoutClient>{children}</RootLayoutClient>
+        </div>
       </body>
     </html>
   );
