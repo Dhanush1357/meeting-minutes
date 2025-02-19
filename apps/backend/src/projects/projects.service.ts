@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ProjectsRepository } from './projects.repository';
 
 @Injectable()
@@ -6,7 +10,7 @@ export class ProjectsService {
   constructor(private readonly projectsRepository: ProjectsRepository) {}
 
   async getProjects(req: any) {
-    const where = {
+    const where: any = {
       ...(req.pagination.search
         ? {
             OR: [
@@ -17,6 +21,13 @@ export class ProjectsService {
           }
         : {}),
     };
+
+    // If the user is not SUPER_ADMIN, restrict projects to only those they are assigned to
+    if (req.user.role !== 'SUPER_ADMIN') {
+      where.user_roles = {
+        some: { user_id: req.user.userId },
+      };
+    }
 
     return this.projectsRepository.findWithPagination(
       req.pagination,
@@ -32,17 +43,28 @@ export class ProjectsService {
     );
   }
 
-  async getProjectById(id: number) {
+  async getProjectById(id: number, req: any) {
     const project = await this.projectsRepository.findFirst({
       where: { id },
+      include: { user_roles: true },
     });
     if (!project) {
       throw new NotFoundException(`project with ID ${id} not found`);
     }
+
+    // Restrict access if user is not assigned to the project
+    if (!project.user_roles.some((role) => role.user_id === req.user.userId)) {
+      throw new UnauthorizedException('Access denied');
+    }
+
     return project;
   }
 
-  async createProject(data) {
+  async createProject(data, req) {
+    if (req.user.role !== 'SUPER_ADMIN') {
+      throw new UnauthorizedException('Only admins can create projects');
+    }
+
     return this.projectsRepository.create({
       data: {
         title: data.title,

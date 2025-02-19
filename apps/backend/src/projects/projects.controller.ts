@@ -11,12 +11,12 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  async getProjectById(@Param('id', ParseIntPipe) id: number) {
-    return this.ProjectsService.getProjectById(id);
+  async getProjectById(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.ProjectsService.getProjectById(id, req);
   }
 
   @Post()
-  async createProject(@Body() data) {
-    return this.ProjectsService.createProject(data);
+  async createProject(@Body() data, @Req() req) {
+    return this.ProjectsService.createProject(data, req);
   }
 }
