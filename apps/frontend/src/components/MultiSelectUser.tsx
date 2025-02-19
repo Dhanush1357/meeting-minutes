@@ -32,7 +32,6 @@ export function MultiSelectUsers({
   onSelect, 
   placeholder = "Select users..." 
 }: MultiSelectUsersProps) {
-  console.log("users===", users)
   const [open, setOpen] = React.useState(false);
 
   const handleSelect = (userId: string) => {

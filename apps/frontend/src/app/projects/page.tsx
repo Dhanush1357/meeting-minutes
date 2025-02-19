@@ -91,16 +91,16 @@ const ProjectsPage: React.FC = () => {
         creator_id: currentUser?.id,
         user_roles: userRoles,
       };
-      console.log("Project data:", projectData);
+
       await apiFactory(API_ENDPOINTS.PROJECTS.BASE, {
         method: "POST",
         body: projectData,
       });
 
-      const updatedProjects = await apiFactory(API_ENDPOINTS.PROJECTS.BASE, {
+      const updatedProjects: any = await apiFactory(API_ENDPOINTS.PROJECTS.BASE, {
         method: "GET",
       });
-      setProjects(updatedProjects as ProjectType[]);
+      setProjects(updatedProjects?.data as ProjectType[]);
       setIsOpen(false);
       setUserSelections({
         [UserRole.REVIEWER]: [],

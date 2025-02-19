@@ -74,7 +74,7 @@ const UsersPage: React.FC = () => {
         role: UserRole[formData.get("role") as keyof typeof UserRole],
         password: generateRandomPassword(),
       };
-      console.log("User data:", userData);
+
       await apiFactory(API_ENDPOINTS.AUTH.SIGNUP, {
         method: "POST",
         body: userData,
@@ -121,7 +121,7 @@ const UsersPage: React.FC = () => {
       </div>
     );
   }
-  console.log("current========",currentUser)
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">

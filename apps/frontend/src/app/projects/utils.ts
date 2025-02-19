@@ -6,10 +6,10 @@ import { ProjectStatusType } from "./types";
 
 export const fetchProjects = async () => {
   try {
-    const response = await apiFactory(API_ENDPOINTS.PROJECTS.BASE, {
+    const response: any = await apiFactory(API_ENDPOINTS.PROJECTS.BASE, {
       method: "GET",
     });
-    return Array.isArray(response) ? response : [];
+    return Array.isArray(response?.data) ? response?.data : [];
   } catch (err) {
     toast.error(`Failed to fetch projects: ${err}`);
     return [];

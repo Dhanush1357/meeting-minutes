@@ -7,6 +7,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { PaginationInterceptor } from './common/pagination/pagination.interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { MomModule } from './mom/mom.module';
+import { NotificationsModule } from './common/notification/notifications.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MomModule } from './mom/mom.module';
     UsersModule,
     ProjectsModule,
     MomModule,
+    NotificationsModule
   ],
   providers: [
     {

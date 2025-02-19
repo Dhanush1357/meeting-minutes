@@ -1,4 +1,5 @@
 import API_ENDPOINTS from "@/lib/apiEndpoints";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export interface ApiOptions {
   method: "GET" | "POST" | "PATCH" | "DELETE";
@@ -12,7 +13,7 @@ const apiFactory = async <T>(
 ): Promise<T> => {
   try {
     // Get token from localStorage
-    const token = localStorage.getItem("token");
+    const token = useAuthStore.getState().token;
 
     // Prepare headers
     const headers: Record<string, string> = {

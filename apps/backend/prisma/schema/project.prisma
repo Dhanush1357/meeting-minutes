@@ -15,8 +15,9 @@ model Project {
   title  String
   status ProjectStatus @default(OPEN)
 
-  user_roles CategoriesOnProjects[] // This table connects users to projects with their roles
-  MoM        MoM[]
+  user_roles   CategoriesOnProjects[] // This table connects users to projects with their roles
+  MoM          MoM[]
+  Notification Notification[]
 }
 
 enum ProjectStatus {

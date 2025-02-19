@@ -17,7 +17,7 @@ export class MailService {
         from: process.env.EMAIL_USER,
         to: email,
         subject: 'Password Reset Request!',
-        text: `Use this link to reset your password: ${process.env.RESET_PASSWORD_LINK}?token=${resetToken}`,
+        text: `Use this link to reset your password: ${process.env.SERVER_URL}${process.env.RESET_PASSWORD_LINK}?token=${resetToken}`,
       };
       await this.transporter.sendMail(mailOptions);
     } catch (error) {

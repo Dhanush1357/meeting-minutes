@@ -4,10 +4,10 @@ import toast from "react-hot-toast";
 
 export const fetchUsers = async () => {
   try {
-    const response = await apiFactory(API_ENDPOINTS.USERS.BASE, {
+    const response: any = await apiFactory(API_ENDPOINTS.USERS.BASE, {
       method: "GET",
     });
-    return Array.isArray(response) ? response : [];
+    return Array.isArray(response?.data) ? response?.data : [];
   } catch (err) {
     toast.error(`Failed to fetch users: ${err}`);
     return [];

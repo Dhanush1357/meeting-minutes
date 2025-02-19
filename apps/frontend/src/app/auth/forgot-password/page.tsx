@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation"; // Changed from 'next/router'
-import { useAuthStore } from "@/stores/useAuthStore";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardContent,
-  CardFooter,
+  CardFooter
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,13 +18,18 @@ import API_ENDPOINTS from "@/lib/apiEndpoints";
 import apiFactory from "@/factories/apiFactory";
 import Link from "next/link";
 
-const ForgotPasswordForm = () => {
+// Separate component for the form content
+const FormContent = () => {
   const searchParams = useSearchParams();
-  const emailFromQuery = searchParams?.get("email") || "";
-  const [email, setEmail] = useState(emailFromQuery);
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  
+  useEffect(() => {
+    const emailFromQuery = searchParams?.get("email") || "";
+    setEmail(emailFromQuery);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,21 +41,77 @@ const ForgotPasswordForm = () => {
       const data = await apiFactory<{ message: string }>(
         API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
         {
-          method: "POST", // HTTP method
-          body: { email }, // Send email to API
+          method: "POST",
+          body: { email },
         }
       );
       console.log("Reset password email sent:", data);
       setSuccess("A password reset email has been sent!");
     } catch (err) {
       setError(
-        err instanceof Error ? JSON.stringify(err) : "An unexpected error occurred"
+        err instanceof Error
+          ? JSON.stringify(err)
+          : "An unexpected error occurred"
       );
     } finally {
       setLoading(false);
     }
   };
 
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {success && (
+        <Alert variant="default">
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="name@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full focus:ring-[#127285] focus:border-[#127285]"
+          required
+        />
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full bg-[#127285] hover:bg-[#0e5a6a] text-white"
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Sending...
+          </>
+        ) : (
+          "Send Mail"
+        )}
+      </Button>
+    </form>
+  );
+};
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex justify-center p-4">
+    <Loader2 className="h-6 w-6 animate-spin text-[#127285]" />
+  </div>
+);
+
+// Main component with Suspense boundary
+const ForgotPasswordForm = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
@@ -62,47 +121,9 @@ const ForgotPasswordForm = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {success && (
-              <Alert variant="default">
-                <AlertDescription>{success}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full focus:ring-[#127285] focus:border-[#127285]"
-                required
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-[#127285] hover:bg-[#0e5a6a] text-white"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                "Send Mail"
-              )}
-            </Button>
-          </form>
+          <Suspense fallback={<LoadingFallback />}>
+            <FormContent />
+          </Suspense>
         </CardContent>
         <CardFooter>
           <Link href="/auth/login" className="text-[#127285] hover:underline">
