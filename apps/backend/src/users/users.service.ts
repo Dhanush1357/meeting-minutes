@@ -1,6 +1,6 @@
 import { UsersRepository } from './users.repository';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import { pick } from 'lodash';
 
 @Injectable()
 export class UsersService {
@@ -48,30 +48,23 @@ export class UsersService {
   }
 
   async updateUser(userId: number, data: any) {
-    // Initialize empty update data object
-    const updateData: any = {};
+    const updateData: any = Object.fromEntries(
+      await Promise.all(
+        Object.entries(data)
+          .filter(([_, value]) => value !== undefined) // Exclude undefined values
+          .map(async ([key, value]) => [key, value]),
+      ),
+    );
 
-    // Only add fields that are provided
-    if (data.first_name !== undefined) {
-      updateData.first_name = data.first_name;
-    }
-
-    if (data.last_name !== undefined) {
-      updateData.last_name = data.last_name;
-    }
-
-    // If new password is provided, hash it
-    if (data.password) {
-      updateData.password = await bcrypt.hash(data.password, 10);
-    }
-
-    if (data.profile_complete !== undefined) {
-      updateData.profile_complete = data.profile_complete;
-    }
+    // Pick only the properties defined in UpdateProjectDto
+    const validData = {
+      ...pick(updateData, ['first_name', 'last_name', 'profile_complete', 'role', 'is_active']),
+      updated_at: new Date()
+    };
 
     const updatedUser = await this.UsersRepository.update({
       where: { id: userId },
-      data: updateData,
+      data: validData,
       select: {
         id: true,
         email: true,

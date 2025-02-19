@@ -21,7 +21,7 @@ export class AuthService {
     }
     return {
       user: user,
-      token: jwt.sign({ userId: user.id, role: user.role }, this.jwtSecret, { expiresIn: '1h' }),
+      token: jwt.sign({ userId: user.id, role: user.role }, this.jwtSecret),
     };
   }
 
@@ -38,7 +38,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new NotFoundException('User not found');
 
-    const resetToken = jwt.sign({ email }, this.jwtSecret, { expiresIn: '1h' });
+    const resetToken = jwt.sign({ email }, this.jwtSecret, { expiresIn: '5m' });
     await this.mailService.sendResetPasswordMail(email, resetToken);
   }
 

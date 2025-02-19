@@ -10,12 +10,25 @@ model MoM {
   creator_id Int
   created_by User @relation("UserCreatedMoms", fields: [creator_id], references: [id])
 
-  title  String
-  status MoMStatus @default(CREATED)
+  title           String
+  status          MoMStatus @default(CREATED)
+  completion_date DateTime?
+  place           String?
+
+  discussion  String @db.Text // Stores discussion details
+  open_issues String @db.Text // Stores open issues
+  updates     String @db.Text // Stores updates
+  notes       String @db.Text // Additional notes
 
   // Relations
   project_id Int
   project    Project @relation(fields: [project_id], references: [id])
+
+  // Tracking MoM Creation from Existing MoMs
+  reference_mom_id Int? // Tracks if the MoM is created based on another MoM
+  mom_number       String? // Stores values like 001, 002, etc.
+
+  @@unique([project_id, mom_number]) // Ensures unique numbering within each project
 }
 
 enum MoMStatus {

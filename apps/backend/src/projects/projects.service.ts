@@ -4,6 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ProjectsRepository } from './projects.repository';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { pick } from 'lodash';
 
 @Injectable()
 export class ProjectsService {
@@ -68,7 +70,7 @@ export class ProjectsService {
     return this.projectsRepository.create({
       data: {
         title: data.title,
-        creator_id: data.creator_id,
+        creator_id: req.user.id,
         user_roles: {
           create: data.user_roles.map((role: any) => ({
             user_id: role.user_id,
@@ -82,4 +84,32 @@ export class ProjectsService {
       },
     });
   }
+
+  async updateProject(id: number, updateProjectDto: UpdateProjectDto, req: any) {
+    if (req.user.role !== 'SUPER_ADMIN') {
+      throw new UnauthorizedException('Only admins can edit projects');
+    }
+
+    const updateData: any = Object.fromEntries(
+      await Promise.all(
+        Object.entries(updateProjectDto)
+          .filter(([_, value]) => value !== undefined)
+          .map(async ([key, value]) => [
+            key,
+            value,
+          ])
+      )
+    );
+
+    const validData = {
+      ...pick(updateData, ['title', 'status', 'is_active']),
+      updated_at: new Date(), // Set updated_at to current timestamp
+    };
+
+    return this.projectsRepository.update({
+      where: { id },
+      data: validData,
+    });
+  }
+  
 }

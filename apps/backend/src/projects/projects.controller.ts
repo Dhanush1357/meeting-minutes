@@ -1,5 +1,15 @@
-import { Controller, Get, Put, Body, Param, Post, ParseIntPipe, Req  } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  Param,
+  Post,
+  ParseIntPipe,
+  Req,
+} from '@nestjs/common';
 import { ProjectsService } from './projects.service';
+import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Controller('projects')
 export class ProjectsController {
@@ -18,5 +28,14 @@ export class ProjectsController {
   @Post()
   async createProject(@Body() data, @Req() req) {
     return this.ProjectsService.createProject(data, req);
+  }
+
+  @Patch(':id')
+  async updateProject(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateProjectDto: UpdateProjectDto,
+    @Req() req
+  ) {
+    return this.ProjectsService.updateProject(id, updateProjectDto, req);
   }
 }
