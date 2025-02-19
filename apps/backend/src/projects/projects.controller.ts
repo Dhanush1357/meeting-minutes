@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, Param, Post, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Put, Body, Param, Post, ParseIntPipe, Req  } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 
 @Controller('projects')
@@ -6,8 +6,8 @@ export class ProjectsController {
   constructor(private readonly ProjectsService: ProjectsService) {}
 
   @Get()
-  async getProjects() {
-    return this.ProjectsService.getProjects();
+  async getProjects(@Req() req) {
+    return this.ProjectsService.getProjects(req);
   }
 
   @Get(':id')

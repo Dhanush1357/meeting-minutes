@@ -1,16 +1,39 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { ProjectsRepository } from './projects.repository';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly projectsRepository: ProjectsRepository) {}
 
-  async getProjects() {
-    return this.prisma.project.findMany();
+  async getProjects(req: any) {
+    const where = {
+      ...(req.pagination.search
+        ? {
+            OR: [
+              {
+                title: { contains: req.pagination.search, mode: 'insensitive' },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    return this.projectsRepository.findWithPagination(
+      req.pagination,
+      where,
+      undefined,
+      {
+        user_roles: {
+          include: {
+            user: { select: { first_name: true, email: true } },
+          },
+        },
+      },
+    );
   }
 
   async getProjectById(id: number) {
-    const project = await this.prisma.project.findFirst({
+    const project = await this.projectsRepository.findFirst({
       where: { id },
     });
     if (!project) {
@@ -20,7 +43,7 @@ export class ProjectsService {
   }
 
   async createProject(data) {
-    return this.prisma.project.create({
+    return this.projectsRepository.create({
       data: {
         title: data.title,
         creator_id: data.creator_id,

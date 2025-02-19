@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { PrismaService } from '../../prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
+import { MailService } from '../common/mail/mail.service';
 import { UserRole } from '@prisma/client';
 
 @Injectable()
@@ -14,15 +14,6 @@ export class AuthService {
 
   private readonly jwtSecret = process.env.JWT_SECRET || 'default-secret-key';
 
-  async signup(email: string, password: string, role: UserRole) {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
-      data: { email, password: hashedPassword, role },
-    });
-    await this.mailService.sendWelcomeEmail(user.email, user.email, password);
-    return user;
-  }
-
   async login(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -30,8 +21,17 @@ export class AuthService {
     }
     return {
       user: user,
-      token: jwt.sign({ userId: user.id }, this.jwtSecret, { expiresIn: '1h' }),
+      token: jwt.sign({ userId: user.id, role: user.role }, this.jwtSecret, { expiresIn: '1h' }),
     };
+  }
+
+  async signup(email: string, password: string, role: UserRole) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await this.prisma.user.create({
+      data: { email, password: hashedPassword, role },
+    });
+    await this.mailService.sendWelcomeEmail(user.email, user.email, password);
+    return user;
   }
 
   async forgotPasswordMail(email: string) {

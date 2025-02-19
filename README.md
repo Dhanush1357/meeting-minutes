@@ -24,23 +24,67 @@ mom-management/
 
 ## Features
 
-### 1. Project Management
-- Super Admin can create and manage projects, assign roles, and onboard users
-- Each project has its own set of roles: MoM Creators, Reviewers, and Approvers
-
-### 2. MoM Management
-- MoM Creators can create and submit MoMs
-- MoMs can be created from scratch or by pulling topics from previous MoMs within the same project-
-- Reviewers can approve or reject MoMs, add comments
-- Approvers can finalize MoMs and trigger PDF generation for download
-
-### 3. User Management
+### 1. User Management
 - Admin users can send email invitations to onboard new users
-- Users can update their profile details and reset passwords
+- New users must fill in necessary details upon their first login
+- Users can update their profile details and change their password
+- Reset Password functionality with an email-based link
 
-### 4. Notifications
-- Email notifications are sent for MoM submission, review, approval, and updates
-- Users are notified when they are assigned to a MoM or when their action is required
+### 2. Project Management
+- Super Admin can create and manage projects, assign roles.
+- Each project has its own set of roles:
+  - MoM Creators
+  - Reviewers
+  - Approvers
+- Projects List View to display all created projects
+- Project Detail View with options to edit details
+- Super Admin can edit projects by adding users or marking them inactive
+- Super Admin can close a project when it's completed
+
+### 3. MoM Management
+- MoM Creators can create and submit MoMs
+- MoMs can be created from scratch or by importing topics from previous MoMs within the same project
+- MoM List View displaying all created MoMs
+- MoM Detail View for reviewing and editing MoMs
+- MoM Creators can send MoMs for review.
+- Reviewers can edit MoMs before approval if required
+- Reviewers can approve MoMs or send them back for revision with change comments.
+- Approvers can finalize MoMs by approving them.
+- Approvers can send MoMs back for revision with change comments
+- PDF Generation and Download PDF option for approved MoMs.
+- MoM Creators, Reviewers, and Approvers can add weekly updates to an open MoM until it is closed.
+- Approvers can close MoMs once all actions are completed.
+
+
+### 4. Security & Permissions
+- Secure API calls with token validation
+- Role-based access control ensures users receive data based on their roles
+- API endpoints are paginated for better performance
+- Activity tracking for all models to maintain logs of changes
+
+### 5. Notifications
+
+### Email Notifications
+- Sent when a project is created to the assigned creator
+- Sent for MoM-related activities:
+  - Creation (Super Admin flow)
+  - Review requests
+  - Approval requests
+  - Rejection notifications
+  - Final approval with PDF generation
+
+### Web Notifications
+- Sent to attached users when:
+  - A project is created
+  - A project is edited
+  - A project is closed
+  - A MoM is sent for review
+  - A MoM is sent for approval
+  - A MoM is rejected by a reviewer
+  - A MoM is approved
+  - A MoM is rejected by the approver
+  - A MoM is closed
+
 
 ## Installation
 
@@ -64,10 +108,8 @@ cd mom-management
 npm install
 ```
 
-3. Set up the environment variables in a `.env` file in the root of backend folder. The following environment variables are required:
-```bash
-DATABASE_URL=your_database_url
-```
+3. Follow the steps in the backend & frontend README :
+
 
 4. Run the development environment in the root of the project:
 ```bash

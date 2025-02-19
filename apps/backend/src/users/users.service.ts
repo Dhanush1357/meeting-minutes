@@ -1,10 +1,51 @@
+import { UsersRepository } from './users.repository';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly UsersRepository: UsersRepository) {}
+
+  async getUsers(req: any) {
+    const where = {
+      ...(req.pagination.search
+        ? {
+            OR: [
+              {
+                email: { contains: req.pagination.search, mode: 'insensitive' },
+              },
+            ],
+          }
+        : {}),
+    };
+    return this.UsersRepository.findWithPagination(
+      req.pagination,
+      where,
+      {
+        id: true,
+        created_at: true,
+        updated_at: true,
+        is_active: true,
+        email: true,
+        password: false,
+        first_name: true,
+        last_name: true,
+        role: true,
+        profile_complete: true,
+      },
+      undefined,
+    );
+  }
+
+  async getUserById(id: number) {
+    const user = await this.UsersRepository.findFirst({
+      where: { id },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
 
   async updateUser(userId: number, data: any) {
     // Initialize empty update data object
@@ -28,7 +69,7 @@ export class UsersService {
       updateData.profile_complete = data.profile_complete;
     }
 
-    const updatedUser = await this.prisma.user.update({
+    const updatedUser = await this.UsersRepository.update({
       where: { id: userId },
       data: updateData,
       select: {
@@ -42,19 +83,5 @@ export class UsersService {
     });
 
     return updatedUser;
-  }
-
-  async getUsers() {
-    return this.prisma.user.findMany();
-  }
-
-  async getUserById(id: number) {
-    const user = await this.prisma.user.findFirst({
-      where: { id },
-    });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
   }
 }
