@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { Project } from '@prisma/client';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
   private transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: true,
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
@@ -11,6 +15,13 @@ export class MailService {
     },
   });
 
+  /**
+   * Sends a password reset email to the specified email address.
+   *
+   * @param email - The recipient's email address.
+   * @param resetToken - The token to include in the reset password link.
+   * @throws Error if the email fails to send.
+   */
   async sendResetPasswordMail(email: string, resetToken: string) {
     try {
       const mailOptions = {
@@ -25,6 +36,14 @@ export class MailService {
     }
   }
 
+  /**
+   * Sends a welcome email with login details to the specified email address.
+   *
+   * @param to - The recipient's email address.
+   * @param username - The username to include in the email.
+   * @param password - The password to include in the email.
+   * @throws Error if the email fails to send.
+   */
   async sendWelcomeEmail(to: string, username: string, password: string) {
     try {
       const mailOptions = {
@@ -36,6 +55,27 @@ export class MailService {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
       throw new Error(`Failed to send welcome email: ${error.message}`);
+    }
+  }
+
+  /**
+   * Sends a project created notification email to the specified email address.
+   *
+   * @param email - The recipient's email address.
+   * @param project - The project object containing the project title.
+   * @throws Error if the email fails to send.
+   */
+  async sendProjectCreatedMail(email: string, project: Project) {
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'New Project Created!',
+        text: `Project: "${project.title}" has been created by admin and you are assigned as a creator.`,
+      };
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      throw new Error(`Failed to send project created email: ${error.message}`);
     }
   }
 }

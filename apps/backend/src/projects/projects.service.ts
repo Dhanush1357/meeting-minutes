@@ -7,11 +7,25 @@ import { ProjectsRepository } from './projects.repository';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { pick } from 'lodash';
 import { NotificationsService } from 'src/common/notification/notifications.service';
+import { MailService } from 'src/common/mail/mail.service';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly projectsRepository: ProjectsRepository, private readonly notificationService: NotificationsService) {}
+  constructor(
+    private readonly projectsRepository: ProjectsRepository,
+    private readonly notificationService: NotificationsService,
+    private mailService: MailService,
+  ) {}
 
+  /**
+   * Fetches projects with pagination and search
+   *
+   * The method takes into account the user's role and only returns projects that the user is assigned to
+   * if the user is not SUPER_ADMIN
+   *
+   * @param req The request object containing the pagination and search query
+   * @returns A paginated list of projects with the user roles and user details
+   */
   async getProjects(req: any) {
     const where: any = {
       ...(req.pagination.search
@@ -46,6 +60,18 @@ export class ProjectsService {
     );
   }
 
+  /**
+   * Fetches a project by ID
+   *
+   * The method takes into account the user's role and only returns projects that the user is assigned to
+   * if the user is not SUPER_ADMIN
+   *
+   * @param id The ID of the project to fetch
+   * @param req The request object containing the user details
+   * @returns The project with the user roles and user details
+   * @throws NotFoundException if the project with the given ID is not found
+   * @throws UnauthorizedException if the user is not assigned to the project
+   */
   async getProjectById(id: number, req: any) {
     const project = await this.projectsRepository.findFirst({
       where: { id },
@@ -63,6 +89,16 @@ export class ProjectsService {
     return project;
   }
 
+  /**
+   * Creates a new project with the given title and user roles
+   *
+   * The method takes into account the user's role and only allows admins to create projects
+   *
+   * @param data The create payload containing the title and user roles
+   * @param req The request object containing the user details
+   * @returns The created project with the user roles and user details
+   * @throws UnauthorizedException if the user is not an admin
+   */
   async createProject(data, req) {
     if (req.user.role !== 'SUPER_ADMIN') {
       throw new UnauthorizedException('Only admins can create projects');
@@ -81,16 +117,53 @@ export class ProjectsService {
         },
       },
       include: {
-        user_roles: true,
-      },
+        user_roles: {
+          include: {
+            user: {
+              select: {
+                email: true
+              }
+            }
+          }
+        }
+      }
     });
 
+    // Find the user with the "CREATOR" role
+    const creatorRole = project.user_roles.find(
+      (role) => role.role === 'CREATOR',
+    );
+    if (creatorRole) {
+      await this.mailService.sendProjectCreatedMail(
+        creatorRole.user.email,
+        project,
+      );
+    }
+
+    // Notify all assigned users
     const users = project.user_roles.map((role) => role.user_id);
-    await this.notificationService.sendNotification(users, `New project created: ${project.title}`, project.id, 'PROJECT_CREATED');
+    await this.notificationService.sendNotification(
+      users,
+      `New project created: ${project.title}`,
+      project.id,
+      'PROJECT_CREATED',
+    );
 
     return project;
   }
 
+  /**
+   * Updates a project by ID
+   *
+   * The method takes into account the user's role and only allows admins to edit projects
+   *
+   * @param id The ID of the project to update
+   * @param updateProjectDto The update payload
+   * @param req The request object containing the user details
+   * @returns The updated project with the user roles and user details
+   * @throws NotFoundException if the project with the given ID is not found
+   * @throws UnauthorizedException if the user is not an admin
+   */
   async updateProject(
     id: number,
     updateProjectDto: UpdateProjectDto,
@@ -100,8 +173,12 @@ export class ProjectsService {
       throw new UnauthorizedException('Only admins can edit projects');
     }
 
-    const project = await this.projectsRepository.findFirst({ where: { id }, include: { user_roles: true } });
-    if (!project) throw new NotFoundException(`Project with ID ${id} not found`);
+    const project = await this.projectsRepository.findFirst({
+      where: { id },
+      include: { user_roles: true },
+    });
+    if (!project)
+      throw new NotFoundException(`Project with ID ${id} not found`);
 
     const updateData: any = Object.fromEntries(
       await Promise.all(
@@ -121,22 +198,56 @@ export class ProjectsService {
       data: validData,
     });
 
-    const users = project.user_roles.map(role => role.user_id);
-    await this.notificationService.sendNotification(users, `Project updated: ${project.title}`, project.id, 'PROJECT_UPDATED');
+    const users = project.user_roles.map((role) => role.user_id);
+    await this.notificationService.sendNotification(
+      users,
+      `Project updated: ${project.title}`,
+      project.id,
+      'PROJECT_UPDATED',
+    );
 
     return updatedProject;
   }
 
+  /**
+   * Closes a project by ID
+   *
+   * The method takes into account the user's role and only allows admins to close projects
+   *
+   * @param id The ID of the project to close
+   * @param req The request object containing the user details
+   * @returns A success message
+   * @throws NotFoundException if the project with the given ID is not found
+   * @throws UnauthorizedException if the user is not an admin
+   */
   async closeProject(id: number, req: any) {
     if (req.user.role !== 'SUPER_ADMIN') {
       throw new UnauthorizedException('Only admins can close projects');
     }
 
-    await this.projectsRepository.update({ where: { id }, data: { status: 'CLOSED' } });
+    const project = await this.projectsRepository.findFirst({
+      where: { id },
+      include: { user_roles: true },
+    });
+  
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${id} not found`);
+    }
 
-    await this.notificationService.sendNotification([], `Project #${id} has been closed`, id, 'PROJECT_CLOSED');
+    await this.projectsRepository.update({
+      where: { id },
+      data: { status: 'CLOSED' },
+    });
+
+    const users = project.user_roles.map((role) => role.user_id);
+    await this.notificationService.sendNotification(
+      users,
+      `Project #${id} has been closed`,
+      id,
+      'PROJECT_CLOSED',
+    );
     await this.notificationService.removeProjectNotifications(id);
 
     return { message: 'Project closed successfully' };
-}
+  }
 }
