@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
   const isAuthenticated = authData ? JSON.parse(decodeURIComponent(authData)).state.isAuthenticated : false
 
   // List of routes to exclude from the middleware
-  const excludedRoutes = ['/auth/login', '/auth/forgot-password', '/public', '/favicon.ico', '/manifest.json']
+  const excludedRoutes = ['/auth/login', '/auth/forgot-password', '/auth/reset-password', '/public', '/favicon.ico', '/manifest.json']
 
    // If the requested path is in the excluded routes, bypass the middleware
    if (excludedRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {

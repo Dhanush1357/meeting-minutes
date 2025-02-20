@@ -13,15 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Loader2 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { PlusCircle, Loader2, ArrowUpDown } from "lucide-react";
 import apiFactory from "@/factories/apiFactory";
 import API_ENDPOINTS from "@/lib/apiEndpoints";
 import { formatDate } from "@/lib/utils";
@@ -34,8 +26,9 @@ import toast from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusLabels } from "./constants";
 import { MultiSelectUsers } from "@/components/MultiSelectUser";
-import Link from "next/link";
-
+import { useRouter } from "next/navigation";
+import { DataTable } from "@/components/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
 
 interface UserSelections {
   [UserRole.REVIEWER]: string[];
@@ -53,6 +46,65 @@ const ProjectsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const { currentUser } = useAuthStore();
+  const router = useRouter();
+
+  const columns: ColumnDef<ProjectType>[] = [
+    {
+      accessorKey: "id",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ID
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+    },
+    {
+      accessorKey: "title",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Title
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant="secondary"
+          className={getProjectStatusBadgeColor(row.original.status)}
+        >
+          {ProjectStatusLabels[row.original.status]}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Created At
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => formatDate(row.original.created_at),
+    },
+  ];
 
   const [userSelections, setUserSelections] = useState<UserSelections>({
     [UserRole.REVIEWER]: [],
@@ -138,6 +190,10 @@ const ProjectsPage: React.FC = () => {
     loadProjects();
   }, []);
 
+  const handleRowClick = (project: ProjectType) => {
+    router.push(`/projects/${project.id}`);
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -216,43 +272,13 @@ const ProjectsPage: React.FC = () => {
           )}
         </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {projects && projects.length > 0 ? (
-              projects.map((project: ProjectType) => (
-                <Link href={`/projects/${project.id}`} legacyBehavior className="cursor-pointer hover:bg-gray-100" key={project.id}>
-                <TableRow key={project.id}>
-                  <TableCell>{project.id}</TableCell>
-                  <TableCell>{project.title}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={getProjectStatusBadgeColor(project.status)}
-                    >
-                      {ProjectStatusLabels[project.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatDate(project.created_at)}</TableCell>
-                </TableRow>
-                </Link>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-gray-500">
-                  No projects found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={columns}
+          data={projects}
+          searchKey="title"
+          searchPlaceholder="Search projects..."
+          onRowClick={handleRowClick}
+        />
       </div>
     </div>
   );
