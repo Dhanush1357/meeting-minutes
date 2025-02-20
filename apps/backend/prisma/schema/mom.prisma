@@ -15,10 +15,10 @@ model MoM {
   completion_date DateTime?
   place           String?
 
-  discussion  String @db.Text // Stores discussion details
-  open_issues String @db.Text // Stores open issues
-  updates     String @db.Text // Stores updates
-  notes       String @db.Text // Additional notes
+  discussion  Json
+  open_issues Json?
+  updates     Json?
+  notes       Json?
 
   // Relations
   project_id Int

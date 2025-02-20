@@ -5,6 +5,6 @@ import { PrismaService } from '../../prisma/prisma.service';
 @Injectable()
 export class MomRepository extends BaseRepository {
   constructor(prisma: PrismaService) {
-    super(prisma, 'mom');
+    super(prisma, 'MoM');
   }
 }

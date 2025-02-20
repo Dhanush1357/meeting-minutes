@@ -38,4 +38,9 @@ export class ProjectsController {
   ) {
     return this.ProjectsService.updateProject(id, updateProjectDto, req);
   }
+
+  @Post(':id/close')
+  async closeMom(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.ProjectsService.closeProject(id, req);
+  }
 }

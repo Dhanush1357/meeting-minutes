@@ -38,4 +38,34 @@ export class MomController {
   ) {
     return this.MomService.updateMom(id, updateMomDto, req);
   }
+
+  @Post(':id/send-review')
+  async sendForReview(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.MomService.sendForReview(id, req);
+  }
+
+  @Post(':id/send-approval')
+  async sendForApproval(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.MomService.sendForApproval(id, req);
+  }
+
+  @Post(':id/reject-review')
+  async rejectByReviewer(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.MomService.rejectByReviewer(id, req);
+  }
+
+  @Post(':id/approve')
+  async approve(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.MomService.approve(id, req);
+  }
+
+  @Post(':id/reject-approval')
+  async rejectByApprover(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.MomService.rejectByApprover(id, req);
+  }
+
+  @Post(':id/close')
+  async closeMom(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.MomService.closeMom(id, req);
+  }
 }

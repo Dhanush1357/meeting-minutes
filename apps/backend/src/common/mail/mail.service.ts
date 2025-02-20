@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { Project } from '@prisma/client';
+import { Project, MoM, User } from '@prisma/client';
 import * as nodemailer from 'nodemailer';
+import { generateEmailContent } from './utils';
+import { ProjectUtils } from 'src/projects/utils';
 
 @Injectable()
 export class MailService {
+  constructor(private readonly projectUtils: ProjectUtils) {}
+
   private transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -76,6 +80,127 @@ export class MailService {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
       throw new Error(`Failed to send project created email: ${error.message}`);
+    }
+  }
+
+  async sendMoMCreatedEmail(
+    mom: MoM,
+    attachments: any[],
+    project: any,
+    creator: User,
+  ): Promise<void> {
+    try {
+      const emailContent =
+        mom && project && creator
+          ? generateEmailContent(mom, project, creator)
+          : `
+          <div style="font-family: Arial, sans-serif;">
+            <p>Please find the meeting minutes attached.</p>
+          </div>
+        `;
+      const users = project.user_roles.map((role) => role.user.email);
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: users,
+        subject: 'New Project Created By Admin!',
+        html: emailContent,
+        attachments: attachments,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      throw new Error('Failed to send email');
+    }
+  }
+
+  async notifyReviewers(mom: any, reviewers: any) {
+    try {
+
+      const emails = reviewers.map((user) => user.user.email);
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: emails,
+        subject: 'MoM Sent for Review',
+        text: `A new MoM titled "${mom.title}" has been sent for review. Please review it at your earliest convenience.`,
+      };
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send review notification email:', error);
+      throw new Error('Failed to send review notification email');
+    }
+  }
+
+
+  async notifyApprovers(mom: MoM, users: any) {
+    try {
+      const emails = users.map((user) => user.user.email);
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: emails,
+        subject: 'MoM Sent for Approval',
+        text: `The MoM titled "${mom.title}" has been reviewed and is now awaiting approval.`,
+      };
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send approval notification email:', error);
+      throw new Error('Failed to send approval notification email');
+    }
+  }
+
+  async notifyCreatorRejection(mom: MoM, users: any) {
+    try {
+      const emails = users.map((user) => user.user.email);
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: emails,
+        subject: 'MoM Rejected by Reviewer',
+        text: `The MoM titled "${mom.title}" has been rejected by the reviewer. Please review and make necessary changes.`,
+      };
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send rejection notification email:', error);
+      throw new Error('Failed to send rejection notification email');
+    }
+  }
+
+  async notifyApproval(mom: MoM, pdfBuffer: Buffer, project: any) {
+    try {
+      const users = project.user_roles.map((role) => role.user.email);
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: users,
+        subject: 'MoM Approved',
+        text: `The MoM titled "${mom.title}" has been approved. Please find the attached PDF.`,
+        attachments: [
+          {
+            filename: `MoM_${mom.id}.pdf`,
+            content: pdfBuffer,
+          },
+        ],
+      };
+
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send approval notification email:', error);
+      throw new Error('Failed to send approval notification email');
+    }
+  }
+
+  async notifyRejectionByApprover(mom: MoM, users: any) {
+    try {
+      const emails = users.map((user) => user.user.email);
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: emails,
+        subject: 'MoM Rejected by Approver',
+        text: `The MoM titled "${mom.title}" has been rejected by the approver. Please review and make necessary updates.`,
+      };
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send rejection notification email:', error);
+      throw new Error('Failed to send rejection notification email');
     }
   }
 }
