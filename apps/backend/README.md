@@ -46,11 +46,6 @@ The application is organized into feature-based modules, each containing its own
 - Controls user roles and permissions
 - Stores user data
 
-### Dashboard (`dashboard/`)
-- Provides dashboard functionality
-- Generates metrics and statistics
-- Displays user analytics
-- Manages dashboard views
 
 ### Mail (`mail/`)
 - Handles email communications

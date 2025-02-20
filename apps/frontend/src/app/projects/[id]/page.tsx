@@ -10,11 +10,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  PlusCircle,
+  Loader2,
+  Calendar,
+  Users,
+  Pencil,
+  Lock,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { MoMType } from "./types";
 import { UserRole } from "@/app/users/types";
@@ -23,6 +29,12 @@ import apiFactory from "@/factories/apiFactory";
 import API_ENDPOINTS from "@/lib/apiEndpoints";
 import { Badge } from "@/components/ui/badge";
 import toast from "react-hot-toast";
+import TeamMembersSection from "./teamMembers";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import MoMPreviewList from "./mom/momPreview";
+import MoMForm from "./mom/momForm";
 
 const ProjectDetailPage: React.FC = () => {
   const params = useParams();
@@ -30,9 +42,14 @@ const ProjectDetailPage: React.FC = () => {
   const [moms, setMoms] = useState<MoMType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isCloseOpen, setIsCloseOpen] = useState(false);
+  const [closeLoading, setCloseLoading] = useState(false);
   const { currentUser } = useAuthStore();
 
-  const isMoMCreator = currentUser?.role === UserRole.CREATOR;
+  const isMoMCreator =
+    currentUser?.role === UserRole.CREATOR ||
+    currentUser?.role === UserRole.SUPER_ADMIN;
 
   useEffect(() => {
     const loadProjectAndMoMs = async () => {
@@ -44,11 +61,11 @@ const ProjectDetailPage: React.FC = () => {
         );
         setProject(projectData as ProjectType);
 
-        // const momsData = await apiFactory(
-        //   `${API_ENDPOINTS.PROJECTS.BASE}/${params.id}/mom`,
-        //   { method: "GET" }
-        // );
-        // setMoms(momsData as MoMType[]);
+        const momsData: any = await apiFactory(
+          `${API_ENDPOINTS.MOM.BASE}?project_id=${params.id}`,
+          { method: "GET" }
+        );
+        setMoms(momsData?.data as MoMType[]);
       } catch (err) {
         toast.error("Failed to load project details");
       } finally {
@@ -83,13 +100,56 @@ const ProjectDetailPage: React.FC = () => {
         `${API_ENDPOINTS.PROJECTS.BASE}/${project?.id}/moms`,
         { method: "GET" }
       );
-      setMoms(updatedMoMs);
+      setMoms(updatedMoMs as MoMType[]);
       setIsOpen(false);
       toast.success("MoM created successfully");
     } catch (err) {
       toast.error("Failed to create MoM");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateProject = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    try {
+      setLoading(true);
+      const updatedProjectData = {
+        title: formData.get("title"),
+      };
+
+      await apiFactory(`${API_ENDPOINTS.PROJECTS.BASE}/${project?.id}`, {
+        method: "PATCH",
+        body: updatedProjectData,
+      });
+      setProject((prev: any) =>
+        prev ? { ...prev, ...updatedProjectData } : null
+      );
+      setIsEditOpen(false);
+      toast.success("Project updated successfully");
+    } catch (err) {
+      toast.error("Failed to update project");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseProject = async () => {
+    try {
+      setCloseLoading(true);
+      await apiFactory(`${API_ENDPOINTS.PROJECTS.BASE}/${project?.id}/close`, {
+        method: "POST",
+      });
+
+      setProject((prev: any) => (prev ? { ...prev, status: "CLOSED" } : null));
+      setIsCloseOpen(false);
+      toast.success("Project closed successfully");
+    } catch (err) {
+      toast.error("Failed to close project");
+    } finally {
+      setCloseLoading(false);
     }
   };
 
@@ -102,105 +162,147 @@ const ProjectDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">{project?.title}</h1>
-          <p className="mt-2 text-gray-600">Project ID: {project?.id}</p>
-        </div>
-
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Minutes of Meetings</h2>
-            {isMoMCreator && (
-              <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg">
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Create MoM
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[700px]">
-                  <DialogHeader>
-                    <DialogTitle>Create New MoM</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleCreateMoM} className="space-y-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="title">MoM Title</Label>
-                        <Input
-                          id="title"
-                          name="title"
-                          placeholder="Enter MoM title"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="completion_date">Completion Date</Label>
-                        <Input
-                          id="completion_date"
-                          name="completion_date"
-                          type="date"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="agenda">Agenda/Discussion Points</Label>
-                        <Textarea
-                          id="agenda"
-                          name="agenda"
-                          placeholder="Enter agenda and discussion points"
-                          required
-                          className="h-32"
-                        />
-                      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Project Header */}
+      <div className="bg-white border-b">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold text-gray-900 sm:truncate">
+                  {project?.title}
+                </h1>
+                {currentUser?.role === UserRole.SUPER_ADMIN &&
+                  project?.status !== "CLOSED" && (
+                    <div className="space-x-2">
+                      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline">
+                            <Pencil className="mr-2 h-5 w-5" />
+                            Edit Project
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[700px]">
+                          <DialogHeader>
+                            <DialogTitle>Edit Project</DialogTitle>
+                          </DialogHeader>
+                          <form
+                            onSubmit={handleUpdateProject}
+                            className="space-y-6"
+                          >
+                            <div>
+                              <Label htmlFor="title">Project Title</Label>
+                              <Input
+                                id="title"
+                                name="title"
+                                defaultValue={project?.title}
+                                required
+                              />
+                            </div>
+                            <DialogFooter>
+                              <Button type="submit" disabled={loading}>
+                                {loading && (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                )}
+                                Update Project
+                              </Button>
+                            </DialogFooter>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                      {project?.status === "OPEN" && (
+                        <Dialog
+                          open={isCloseOpen}
+                          onOpenChange={setIsCloseOpen}
+                        >
+                          <DialogTrigger asChild>
+                            <Button variant="destructive">
+                              <Lock className="mr-2 h-5 w-5" />
+                              Mark as Closed
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Close Project</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to close this project?
+                                This action cannot be undone.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button
+                                variant="destructive"
+                                onClick={handleCloseProject}
+                                disabled={closeLoading}
+                              >
+                                {closeLoading && (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                )}
+                                Close Project
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </div>
-                    <DialogFooter>
-                      <Button type="submit" disabled={loading}>
-                        {loading && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Create MoM
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-
-          <div className="bg-white rounded-lg shadow">
-            {moms.length > 0 ? (
-              <div className="divide-y divide-gray-200">
-                {moms.map((mom) => (
-                  <div key={mom.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-medium">{mom.title}</h3>
-                        <p className="text-sm text-gray-500">
-                          Completion Date: {new Date(mom.completion_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        // className={getMoMStatusBadgeColor(mom.status)}
-                      >
-                        {mom.status}
-                      </Badge>
-                    </div>
-                    <p className="mt-2 text-gray-600 whitespace-pre-line">
-                      {mom.agenda}
-                    </p>
-                  </div>
-                ))}
+                  )}
               </div>
-            ) : (
-              <div className="p-4 text-center text-gray-500">
-                No MoM's found for this project
+              <div className="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
+                <div className="mt-2 flex items-center text-sm text-gray-500">
+                  <Users className="mr-1.5 h-4 w-4" />
+                  Created by {project?.created_by?.first_name}{" "}
+                  {project?.created_by?.last_name}
+                </div>
+                <div className="mt-2 flex items-center text-sm text-gray-500">
+                  <Calendar className="mr-1.5 h-4 w-4" />
+                  Created on{" "}
+                  {new Date(project?.created_at || "").toLocaleDateString()}
+                </div>
+                <Badge
+                  className={`mt-2 ${project?.status === "OPEN" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                >
+                  {project?.status}
+                </Badge>
               </div>
-            )}
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Tabbed Content */}
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+        <Tabs defaultValue="moms" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="moms">Minutes of Meetings</TabsTrigger>
+            <TabsTrigger value="team">Team Members</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="moms">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Minutes of Meetings
+                </h2>
+                {isMoMCreator && project?.status !== "CLOSED" && (
+                  <MoMForm
+                    isOpen={isOpen}
+                    setIsOpen={setIsOpen}
+                    loading={loading}
+                    onSubmit={handleCreateMoM}
+                  />
+                )}
+              </div>
+              <MoMPreviewList moms={moms} isMoMCreator={isMoMCreator} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="team">
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900">Team Members</h2>
+              <TeamMembersSection project={project} />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

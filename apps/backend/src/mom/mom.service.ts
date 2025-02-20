@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -26,7 +27,14 @@ export class MomService {
   ) {}
 
   async getMom(req: any) {
+    const projectId = Number(req.query.project_id); // Convert project_id to number if needed
+
+    if (!projectId) {
+      throw new BadRequestException('Project ID is required');
+    }
+
     const where: any = {
+      project_id: projectId,
       ...(req.pagination.search
         ? {
             OR: [
@@ -49,6 +57,7 @@ export class MomService {
   async getMomById(id: number, req: any) {
     const mom = await this.MomRepository.findFirst({
       where: { id },
+      include: {created_by:true}
     });
     if (!mom) {
       throw new NotFoundException(`mom with ID ${id} not found`);

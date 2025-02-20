@@ -51,7 +51,7 @@ const LoginForm = () => {
         token: data.token
       });
 
-      router.push('/dashboard')
+      router.push('/projects')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {

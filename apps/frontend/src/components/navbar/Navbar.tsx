@@ -12,7 +12,6 @@ type Role = "SUPER_ADMIN" | "public";
 
 const routes = {
   public: [
-    { name: "Dashboard", href: "/dashboard" },
     { name: "Projects", href: "/projects" },
   ],
   SUPER_ADMIN: [{ name: "Users", href: "/users" }],

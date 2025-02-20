@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import RootLayoutClient from "./RootLayoutClient";
 import Navbar from "@/components/navbar/Navbar";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,6 +43,9 @@ export default function RootLayout({
       >
         <Navbar />
         <div className="pt-16">
+          <header className="p-4 bg-white shadow">
+            <Breadcrumbs />
+          </header>
           <RootLayoutClient>{children}</RootLayoutClient>
         </div>
       </body>

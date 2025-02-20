@@ -1,12 +1,29 @@
+import { CurrentUserType } from "@/app/users/types";
+
+interface MoMItem {
+  text: string;
+  completed: boolean;
+}
+
+// Main MoM interface
 export interface MoMType {
   id: number;
-  title: string;
-  completion_date: string;
-  agenda: string;
-  status: MoMStatus;
   created_at: string;
+  updated_at: string | null;
+  is_active: boolean;
   creator_id: number;
+  title: string;
+  status: MoMStatus;
+  completion_date: string | null;
+  place: string;
+  discussion: MoMItem[];
+  open_issues: MoMItem[];
+  updates: MoMItem[];
+  notes: MoMItem[];
   project_id: number;
+  reference_mom_id: number | null;
+  mom_number: number | null;
+  created_by: CurrentUserType
 }
 
 export enum MoMStatus {

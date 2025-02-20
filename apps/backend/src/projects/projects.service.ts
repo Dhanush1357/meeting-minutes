@@ -75,14 +75,42 @@ export class ProjectsService {
   async getProjectById(id: number, req: any) {
     const project = await this.projectsRepository.findFirst({
       where: { id },
-      include: { user_roles: true },
+      include: {
+        // Include creator information
+        created_by: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            role: true,
+            email: true,
+          },
+        },
+        // Include user roles with user information
+        user_roles: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                role: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!project) {
       throw new NotFoundException(`project with ID ${id} not found`);
     }
 
     // Restrict access if user is not assigned to the project
-    if (!project.user_roles.some((role) => role.user_id === req.user.userId)) {
+    if (
+      req.user.role !== 'SUPER_ADMIN' &&
+      !project.user_roles.some((role) => role.user_id === req.user.userId)
+    ) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -121,12 +149,12 @@ export class ProjectsService {
           include: {
             user: {
               select: {
-                email: true
-              }
-            }
-          }
-        }
-      }
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Find the user with the "CREATOR" role
@@ -229,7 +257,7 @@ export class ProjectsService {
       where: { id },
       include: { user_roles: true },
     });
-  
+
     if (!project) {
       throw new NotFoundException(`Project with ID ${id} not found`);
     }

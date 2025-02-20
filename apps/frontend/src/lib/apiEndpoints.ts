@@ -12,6 +12,9 @@ const API_ENDPOINTS = {
   },
   PROJECTS:{
     BASE: "/projects",
+  },
+  MOM: {
+    BASE: "/mom",
   }
 };
 
