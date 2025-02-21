@@ -15,13 +15,16 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({ project }) => {
   // Get unique roles for filter
   const uniqueRoles = [
     "ALL",
-    ...new Set(project?.user_roles.map((role) => role.role)),
+    ...new Set(project?.user_roles?.map((role) => role?.role || "").filter(Boolean) || []),
   ];
-
   // Filter users based on search and role
-  const filteredUsers = project?.user_roles.filter((role) => {
-    const fullName =
-      `${role.user.first_name} ${role.user.last_name}`.toLowerCase();
+  const filteredUsers = project?.user_roles?.filter((role) => {
+
+    const firstName = role?.user?.first_name || "";
+    const lastName = role?.user?.last_name || "";
+    const email = role?.user?.email || "";
+
+    const fullName = `${firstName} ${lastName}`.toLowerCase();
     const matchesSearch =
       fullName.includes(searchTerm.toLowerCase()) ||
       role.user.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -36,7 +39,7 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({ project }) => {
           <Users2 className="h-6 w-6 text-gray-500" />
           <h2 className="text-xl font-semibold text-gray-900">Team Members</h2>
           <Badge variant="secondary" className="ml-2">
-            {project?.user_roles.length} members
+            {project?.user_roles?.length} members
           </Badge>
         </div>
       </div>
@@ -78,15 +81,15 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({ project }) => {
               <div className="flex-shrink-0">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="text-primary font-medium">
-                    {role.user.first_name[0]}
-                    {role.user.last_name[0]}
+                  {(role?.user?.first_name?.[0] ?? "").toUpperCase()}
+                  {(role?.user?.last_name?.[0] ?? "").toUpperCase()}
                   </span>
                 </div>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {role.user.first_name} {role.user.last_name}
+                    {role.user.first_name || ""} {role.user.last_name || ""}
                   </p>
                   <Badge
                     className="ml-2"

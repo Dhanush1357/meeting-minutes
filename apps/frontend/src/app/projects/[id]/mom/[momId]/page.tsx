@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Edit2,
+  Ban
 } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { MoMType } from "../../types";
@@ -21,6 +22,7 @@ import toast from "react-hot-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MoMForm from "../momForm";
 import { Button } from "@/components/ui/button";
+import MoMActionButtons from "./momActionButtons";
 
 const MoMDetailPage: React.FC = () => {
   const params = useParams();
@@ -30,24 +32,24 @@ const MoMDetailPage: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const { currentUser } = useAuthStore();
 
-  useEffect(() => {
-    const loadMoM = async () => {
-      try {
-        setLoading(true);
-        const momData = await apiFactory(
-          `${API_ENDPOINTS.MOM.BASE}/${params.id}`,
-          {
-            method: "GET",
-          }
-        );
-        setMoM(momData as MoMType);
-      } catch (err) {
-        toast.error("Failed to load MoM details");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadMoM = async () => {
+    try {
+      setLoading(true);
+      const momData = await apiFactory(
+        `${API_ENDPOINTS.MOM.BASE}/${params.momId}`,
+        {
+          method: "GET",
+        }
+      );
+      setMoM(momData as MoMType);
+    } catch (err) {
+      toast.error("Failed to load MoM details");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadMoM();
   }, [params.id]);
 
@@ -62,6 +64,22 @@ const MoMDetailPage: React.FC = () => {
       setIsEditMode(false);
     } catch (err) {
       toast.error("Failed to update MoM");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseMom = async () => {
+    try {
+      setLoading(true);
+      await apiFactory(`${API_ENDPOINTS.MOM.BASE}/${mom?.id}/close`, {
+        method: "POST"
+      });
+      toast.success("Status updated successfully");
+      loadMoM();
+      setLoading(false);
+    } catch (error) {
+      toast.error("Failed to update status");
     } finally {
       setLoading(false);
     }
@@ -106,6 +124,8 @@ const MoMDetailPage: React.FC = () => {
     open_issues: mom.open_issues,
     updates: mom.updates,
     notes: mom.notes || [],
+    status: mom.status || "CREATED",
+    creator: mom.creator_id,
   };
 
   return (
@@ -126,16 +146,28 @@ const MoMDetailPage: React.FC = () => {
                 <CardTitle className="text-2xl font-bold text-gray-900">
                   {mom.title}
                 </CardTitle>
-                {mom.status !== "CLOSED" && (
-                  <Button
-                    onClick={() => setIsEditMode(true)}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                    Edit
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {mom.status !== "CLOSED" && (
+                    <Button
+                      onClick={() => setIsEditMode(true)}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  )}
+                  {mom.status !== "CLOSED" && currentUser?.role === "CREATOR" && (
+                    <Button
+                      onClick={() => handleCloseMom()}
+                      variant="outline"
+                      className="flex items-center gap-2 bg-red-500 text-white"
+                    >
+                      <Ban className="h-4 w-4" />
+                      Close MoM
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -208,6 +240,14 @@ const MoMDetailPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+              <MoMActionButtons
+                momId={mom.id}
+                status={mom.status}
+                userRole={currentUser?.role as string}
+                onStatusUpdate={() => {
+                  loadMoM();
+                }}
+              />
             </CardContent>
           </Card>
         </div>

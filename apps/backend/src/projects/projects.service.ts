@@ -216,10 +216,25 @@ export class ProjectsService {
       ),
     );
 
+    // Extract user_roles separately
+    const { user_roles, ...otherData } = updateData;
+
     const validData = {
-      ...pick(updateData, ['title', 'status', 'is_active']),
+      ...pick(updateData, ['title', 'is_active']),
       updated_at: new Date(), // Set updated_at to current timestamp
     };
+
+    // Handle user_roles relation update
+    if (user_roles) {
+      validData.user_roles = {
+        deleteMany: {}, // Removes all existing user_roles for the project
+        create: user_roles.map((role) => ({
+          user_id: role.user_id,
+          role: role.role,
+          assigned_by: role.assigned_by,
+        })),
+      };
+    }
 
     const updatedProject = await this.projectsRepository.update({
       where: { id },

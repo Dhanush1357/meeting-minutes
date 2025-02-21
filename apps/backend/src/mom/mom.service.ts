@@ -33,8 +33,22 @@ export class MomService {
       throw new BadRequestException('Project ID is required');
     }
 
+    const role = req.user.role;
+
+    const roleStatusMap: Record<string, string[]> = {
+      REVIEWER: ['IN_REVIEW', 'NEEDS_REVISION', 'CLOSED', 'APPROVED'],
+      APPROVER: ['AWAITING_APPROVAL', 'APPROVED', 'CLOSED'],
+      CLIENT: ['APPROVED', 'CLOSED'],
+      VENDOR: ['APPROVED', 'CLOSED'],
+      PARTICIPANT: ['APPROVED', 'CLOSED'],
+    };
+
+     // Apply status filter if role exists in the map, else return all for CREATOR & SUPER_ADMIN
+  const statusFilter = roleStatusMap[role] ? { status: { in: roleStatusMap[role] } } : {};
+
     const where: any = {
       project_id: projectId,
+      ...statusFilter,
       ...(req.pagination.search
         ? {
             OR: [

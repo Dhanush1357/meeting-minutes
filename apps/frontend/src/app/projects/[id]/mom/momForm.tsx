@@ -7,7 +7,7 @@ import {
   X,
   Check,
   ChevronDown,
-  GripVertical,
+  Edit2,
 } from "lucide-react";
 import {
   Dialog,
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 // Point/Task related types
 type Point = {
@@ -33,6 +34,9 @@ type TaskInputProps = {
   label: string;
   points: Point[];
   setPoints: (points: Point[]) => void;
+  status?: string;
+  userRole?: string;
+  isCreator?: boolean;
 };
 
 type ExistingMoM = {
@@ -52,6 +56,8 @@ type MoMFormData = {
   open_issues: Point[];
   updates: Point[];
   notes: Point[];
+  status: string;
+  creator: number;
 };
 
 type MoMFormProps = {
@@ -64,24 +70,61 @@ type MoMFormProps = {
   editMode?: boolean;
 };
 
-const TaskInput: React.FC<TaskInputProps> = ({ label, points, setPoints }) => {
+const TaskInput: React.FC<TaskInputProps> = ({
+  label,
+  points,
+  setPoints,
+  status = "CREATED",
+  userRole = "",
+  isCreator = false,
+}) => {
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const canEdit = () => {
+    if (status === "APPROVED" || status === "CLOSED") return false;
+    return isCreator || userRole === "REVIEWER" || userRole === "APPROVER";
+  };
+
+  const canToggleComplete = () => {
+    return status !== "CLOSED";
+  };
+
   const addPoint = () => {
+    if (!canEdit()) return;
     setPoints([...points, { text: "", completed: false }]);
   };
 
   const updatePoint = (index: number, value: string) => {
+    if (!canEdit()) return;
     const newPoints = [...points];
     newPoints[index].text = value;
     setPoints(newPoints);
   };
 
+  const startEditing = (index: number, text: string) => {
+    if (!canEdit()) return;
+    setEditingIndex(index);
+    setEditText(text);
+  };
+
+  const saveEdit = (index: number) => {
+    if (!canEdit()) return;
+    const newPoints = [...points];
+    newPoints[index].text = editText;
+    setPoints(newPoints);
+    setEditingIndex(null);
+  };
+
   const toggleComplete = (index: number) => {
+    if (!canToggleComplete()) return;
     const newPoints = [...points];
     newPoints[index].completed = !newPoints[index].completed;
     setPoints(newPoints);
   };
 
   const removePoint = (index: number) => {
+    if (!canEdit()) return;
     const newPoints = points.filter((_, i) => i !== index);
     setPoints(newPoints);
   };
@@ -91,15 +134,17 @@ const TaskInput: React.FC<TaskInputProps> = ({ label, points, setPoints }) => {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-900">{label}</h3>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={addPoint}
-            className="hover:bg-gray-100"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          {canEdit() && status !== "APPROVED" && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={addPoint}
+              className="hover:bg-gray-100"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-1">
@@ -111,40 +156,78 @@ const TaskInput: React.FC<TaskInputProps> = ({ label, points, setPoints }) => {
             }`}
           >
             <div className="flex items-center gap-2 p-2">
-              <button
-                type="button"
-                onClick={() => toggleComplete(index)}
-                className={`flex-shrink-0 w-5 h-5 rounded border transition-colors ${
-                  point.completed
-                    ? "bg-blue-500 border-blue-500 text-white"
-                    : "border-gray-300 hover:border-gray-400"
-                }`}
-              >
-                {point.completed && <Check className="h-3 w-3" />}
-              </button>
-              <div className="flex-grow">
-                <Input
-                  value={point.text}
-                  onChange={(e) => updatePoint(index, e.target.value)}
-                  placeholder={`Add ${label.toLowerCase()} point`}
-                  className={`border-0 focus:ring-0 bg-transparent ${
-                    point.completed ? "text-gray-500 line-through" : ""
+              {canToggleComplete() && (
+                <button
+                  type="button"
+                  onClick={() => toggleComplete(index)}
+                  className={`flex-shrink-0 w-5 h-5 rounded border transition-colors ${
+                    point.completed
+                      ? "bg-blue-500 border-blue-500 text-white"
+                      : "border-gray-300 hover:border-gray-400"
                   }`}
-                />
+                >
+                  {point.completed && <Check className="h-3 w-3" />}
+                </button>
+              )}
+              <div className="flex-grow">
+                {editingIndex === index ? (
+                  <div className="flex gap-2">
+                    <Input
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="border-0 focus:ring-0 bg-transparent"
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") saveEdit(index);
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => saveEdit(index)}
+                      className="p-1"
+                    >
+                      <Check className="h-4 w-4 text-green-600" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between w-full">
+                    <span
+                      className={
+                        point.completed ? "text-gray-500 line-through" : ""
+                      }
+                    >
+                      {point.text}
+                    </span>
+                    {canEdit() && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEditing(index, point.text)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                      >
+                        <Edit2 className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => removePoint(index)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-0 h-6 w-6"
-              >
-                <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-              </Button>
+              {canEdit() && editingIndex !== index && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removePoint(index)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-0 h-6 w-6"
+                >
+                  <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                </Button>
+              )}
             </div>
           </div>
         ))}
-        {points.length === 0 && (
+        {points.length === 0 && canEdit() && status !== "APPROVED" && (
           <div
             className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
             onClick={addPoint}
@@ -176,6 +259,7 @@ const MoMForm: React.FC<MoMFormProps> = ({
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMoM, setSelectedMoM] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState("");
+  const { currentUser } = useAuthStore();
 
   useEffect(() => {
     if (initialData) {
@@ -311,18 +395,34 @@ const MoMForm: React.FC<MoMFormProps> = ({
               label="Discussion Points"
               points={discussion}
               setPoints={setDiscussion}
+              status={initialData?.status}
+              userRole={currentUser?.role}
+              isCreator={initialData?.creator === currentUser?.id}
             />
             <TaskInput
               label="Open Issues"
               points={openIssues}
               setPoints={setOpenIssues}
+              status={initialData?.status}
+              userRole={currentUser?.role}
+              isCreator={initialData?.creator === currentUser?.id}
             />
             <TaskInput
               label="Updates"
               points={updates}
               setPoints={setUpdates}
+              status={initialData?.status}
+              userRole={currentUser?.role}
+              isCreator={initialData?.creator === currentUser?.id}
             />
-            <TaskInput label="Notes" points={notes} setPoints={setNotes} />
+            <TaskInput
+              label="Notes"
+              points={notes}
+              setPoints={setNotes}
+              status={initialData?.status}
+              userRole={currentUser?.role}
+              isCreator={initialData?.creator === currentUser?.id}
+            />
           </div>
 
           <DialogFooter>

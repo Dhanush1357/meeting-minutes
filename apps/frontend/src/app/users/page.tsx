@@ -72,7 +72,6 @@ const UsersPage: React.FC = () => {
         role: formData.get("role") as UserRole,
         is_active: formData.get("is_active") === "on",
       };
-      console.log("yupadte===============",updateData);
       await apiFactory(`${API_ENDPOINTS.USERS.UPDATE_PROFILE}${selectedUser.id}`, {
         method: "PATCH",
         body: updateData,

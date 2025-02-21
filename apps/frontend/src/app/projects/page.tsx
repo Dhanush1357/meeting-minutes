@@ -29,6 +29,7 @@ import { MultiSelectUsers } from "@/components/MultiSelectUser";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
+import ProfileCompletionModal from "../users/ProfileCompletionModal";
 
 interface UserSelections {
   [UserRole.REVIEWER]: string[];
@@ -38,7 +39,6 @@ interface UserSelections {
   [UserRole.PARTICIPANT]: string[];
 }
 type UserRoleKeys = Exclude<UserRole, UserRole.SUPER_ADMIN>;
-
 
 const ProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<ProjectType[]>([]);
@@ -60,7 +60,7 @@ const ProjectsPage: React.FC = () => {
             ID
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
-        )
+        );
       },
     },
     {
@@ -74,7 +74,7 @@ const ProjectsPage: React.FC = () => {
             Title
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
-        )
+        );
       },
     },
     {
@@ -100,7 +100,7 @@ const ProjectsPage: React.FC = () => {
             Created At
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
-        )
+        );
       },
       cell: ({ row }) => formatDate(row.original.created_at),
     },
@@ -114,7 +114,10 @@ const ProjectsPage: React.FC = () => {
     [UserRole.PARTICIPANT]: [],
   });
 
-  const handleUserSelectionChange = (role: UserRoleKeys, selectedIds: string[]) => {
+  const handleUserSelectionChange = (
+    role: UserRoleKeys,
+    selectedIds: string[]
+  ) => {
     setUserSelections((prev) => ({
       ...prev,
       [role]: selectedIds,
@@ -149,9 +152,12 @@ const ProjectsPage: React.FC = () => {
         body: projectData,
       });
 
-      const updatedProjects: any = await apiFactory(API_ENDPOINTS.PROJECTS.BASE, {
-        method: "GET",
-      });
+      const updatedProjects: any = await apiFactory(
+        API_ENDPOINTS.PROJECTS.BASE,
+        {
+          method: "GET",
+        }
+      );
       setProjects(updatedProjects?.data as ProjectType[]);
       setIsOpen(false);
       setUserSelections({
@@ -235,7 +241,10 @@ const ProjectsPage: React.FC = () => {
                     </div>
                     {/* Get unique roles from users array excluding SUPER_ADMIN */}
                     {Array.from(new Set(users.map((user) => user.role)))
-                      .filter((role): role is UserRoleKeys => role !== UserRole.SUPER_ADMIN)
+                      .filter(
+                        (role): role is UserRoleKeys =>
+                          role !== UserRole.SUPER_ADMIN
+                      )
                       .map((role) => {
                         // Filter users for this specific role
                         const roleUsers = users.filter(
@@ -248,7 +257,10 @@ const ProjectsPage: React.FC = () => {
                             <Label>{role}'s</Label>
                             <MultiSelectUsers
                               users={roleUsers}
-                              selectedUsers={userSelections[role as keyof UserSelections] || []}
+                              selectedUsers={
+                                userSelections[role as keyof UserSelections] ||
+                                []
+                              }
                               onSelect={(selectedIds) =>
                                 handleUserSelectionChange(role, selectedIds)
                               }
@@ -279,6 +291,10 @@ const ProjectsPage: React.FC = () => {
           searchPlaceholder="Search projects..."
           onRowClick={handleRowClick}
         />
+        {/* Profile completion modal */}
+        {currentUser && !currentUser.profile_complete && (
+          <ProfileCompletionModal />
+        )}
       </div>
     </div>
   );
