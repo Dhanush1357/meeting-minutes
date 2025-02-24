@@ -1,21 +1,23 @@
 // Project Models and ENUMS
 
 model Project {
-  // common fields
+  // default fields
   id         Int       @id @default(autoincrement())
   created_at DateTime  @default(now())
-  updated_at DateTime?
   is_active  Boolean   @default(true)
-
-  // creator information
-  creator_id Int
-  created_by User @relation("UserCreatedProjects", fields: [creator_id], references: [id])
-
-  // project details
-  title  String
   status ProjectStatus @default(OPEN)
 
-  user_roles   CategoriesOnProjects[] // This table connects users to projects with their roles
+  title  String
+  user_roles   CategoriesOnProjects[]
+  updated_at DateTime?
+
+  // relation keys
+  creator_id Int
+
+  // relations
+  created_by User @relation("UserCreatedProjects", fields: [creator_id], references: [id])
+
+  // many-to-many relations
   MoM          MoM[]
   Notification Notification[]
 }
@@ -26,14 +28,27 @@ enum ProjectStatus {
 }
 
 model CategoriesOnProjects {
-  project     Project  @relation(fields: [project_id], references: [id])
-  project_id  Int // relation scalar field (used in the `@relation` attribute above)
-  user        User     @relation(fields: [user_id], references: [id])
-  user_id     Int // relation scalar field (used in the `@relation` attribute above)
-  assigned_at DateTime @default(now())
+  //relation keys 
+  user_id     Int
   assigned_by Int
+  role ProjectUserRole
+  assigned_at DateTime
 
-  role UserRole // Specific role for the user in the project (CREATOR, REVIEWER, etc.)
+  // relations
+  user        User     @relation(fields: [user_id], references: [id])
+  project_id  Int
+  project     Project  @relation(fields: [project_id], references: [id])
+
 
   @@id([project_id, user_id]) // Composite primary key
+}
+
+enum ProjectUserRole {
+  SUPER_ADMIN
+  CREATOR
+  REVIEWER
+  APPROVER
+  CLIENT
+  VENDOR
+  PARTICIPANT
 }

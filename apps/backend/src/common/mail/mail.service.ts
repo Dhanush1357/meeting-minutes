@@ -54,7 +54,7 @@ export class MailService {
         from: process.env.EMAIL_USER,
         to,
         subject: 'Welcome to our platform!',
-        text: `Your login details are: username - ${username}, password - ${password}`,
+        text: `Your login details are: username: ${username}, password:  ${password}`,
       };
       await this.transporter.sendMail(mailOptions);
     } catch (error) {

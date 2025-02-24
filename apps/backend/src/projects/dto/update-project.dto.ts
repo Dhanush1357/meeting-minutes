@@ -1,11 +1,11 @@
 import { IsString, IsBoolean } from 'class-validator';
-import { ProjectStatus } from '@prisma/client';
+import { CategoriesOnProjects } from '@prisma/client';
 
 export class UpdateProjectDto {
   @IsString()
   title?: string;
 
-  status?: ProjectStatus;
+  user_roles?: CategoriesOnProjects[];
 
   @IsBoolean()
   is_active?: boolean;

@@ -12,10 +12,10 @@ export class AuthController {
   async login(@Body() body: { email: string; password: string }) {
     return this.authService.login(body.email, body.password);
   }
-
+  
   @Post('signup')
   async signup(@Body() body: { email: string; password: string, role: UserRole }) {
-    return this.authService.signup(body.email, body.password, body.role);
+    return this.authService.signup(body.email, body.password, body?.role || UserRole.USER);
   }
 
   @Public()

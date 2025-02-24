@@ -9,6 +9,7 @@ import { MailService } from 'src/common/mail/mail.service';
 import { UsersRepository } from 'src/users/users.repository';
 import { ProjectsRepository } from 'src/projects/projects.repository';
 import { MomUtils } from './utils';
+import { ProjectUtils } from 'src/projects/utils';
 
 @Module({
   imports: [PrismaModule, MailModule],
@@ -18,7 +19,8 @@ import { MomUtils } from './utils';
     PdfGenerationService,
     UsersRepository,
     ProjectsRepository,
-    MomUtils
+    MomUtils,
+    ProjectUtils
   ],
   controllers: [MomController],
   exports: [MomService],

@@ -13,11 +13,5 @@ export default function RootLayoutClient({
     registerServiceWorker();
   }, []);
 
-  return (
-    <div>
-      <div>
-        {children}
-      </div>
-    </div>
-  );
+  return <div>{children}</div>;
 }

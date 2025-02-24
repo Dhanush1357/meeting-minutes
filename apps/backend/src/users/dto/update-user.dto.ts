@@ -10,8 +10,6 @@ export class UpdateUserDto {
 
   profile_complete?: boolean;
 
-  role?: UserRole;
-
   @IsBoolean()
   is_active?: boolean;
 }

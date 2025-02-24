@@ -3,30 +3,26 @@
 model MoM {
   id         Int       @id @default(autoincrement())
   created_at DateTime  @default(now())
-  updated_at DateTime?
   is_active  Boolean   @default(true)
+  status          MoMStatus @default(CREATED)
 
   // creator information
   creator_id Int
-  created_by User @relation("UserCreatedMoms", fields: [creator_id], references: [id])
-
+  project_id Int
   title           String
-  status          MoMStatus @default(CREATED)
-  completion_date DateTime?
-  place           String?
-
   discussion  Json
   open_issues Json?
   updates     Json?
   notes       Json?
-
-  // Relations
-  project_id Int
-  project    Project @relation(fields: [project_id], references: [id])
-
-  // Tracking MoM Creation from Existing MoMs
+  completion_date DateTime?
+  place           String?
+  updated_at DateTime?
   reference_mom_id Int? // Tracks if the MoM is created based on another MoM
   mom_number       String? // Stores values like 001, 002, etc.
+
+  // Relations
+  created_by User @relation("UserCreatedMoms", fields: [creator_id], references: [id])
+  project    Project @relation(fields: [project_id], references: [id])
 
   @@unique([project_id, mom_number]) // Ensures unique numbering within each project
 }

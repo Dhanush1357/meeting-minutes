@@ -5,7 +5,7 @@ export class UpdateMomDto {
   @IsString()
   title?: string;
 
-  status?: MoMStatus;
+  project_id: number;
 
   @IsBoolean()
   is_active?: boolean;

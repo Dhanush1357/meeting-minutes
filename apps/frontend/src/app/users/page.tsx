@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
@@ -14,13 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   PlusCircle,
   Loader2,
   Mail,
@@ -29,17 +22,16 @@ import {
   ArrowUpDown,
   Edit,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import apiFactory from "@/factories/apiFactory";
 import API_ENDPOINTS from "@/lib/apiEndpoints";
 import toast from "react-hot-toast";
 import { formatDate, generateRandomPassword } from "@/lib/utils";
-import { UserRoleLabels } from "./constants";
 import { UserRole } from "./types";
 import { fetchUsers } from "./utils";
 import { Switch } from "@/components/ui/switch";
+import { usePagination } from "@/hooks/usePagination";
 
 interface User {
   id: number;
@@ -55,10 +47,22 @@ interface User {
 }
 
 const UsersPage: React.FC = () => {
+  const {
+    data: users,
+    loading,
+    pageCount,
+    currentPage,
+    goToPage,
+    meta,
+    refetch,
+  } = usePagination({
+    fetchFn: fetchUsers,
+    pageSize: 10,
+  });
+
   const { currentUser } = useAuthStore();
-  const [users, setUsers] = useState<User[] | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [isInviteLoading, setIsInviteLoading] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [updating, setUpdating] = useState(false);
@@ -69,18 +73,19 @@ const UsersPage: React.FC = () => {
     try {
       setUpdating(true);
       const updateData = {
-        role: formData.get("role") as UserRole,
         is_active: formData.get("is_active") === "on",
       };
-      await apiFactory(`${API_ENDPOINTS.USERS.UPDATE_PROFILE}${selectedUser.id}`, {
-        method: "PATCH",
-        body: updateData,
-      });
+      await apiFactory(
+        `${API_ENDPOINTS.USERS.UPDATE_PROFILE}${selectedUser.id}`,
+        {
+          method: "PATCH",
+          body: updateData,
+        }
+      );
 
       toast.success("User updated successfully");
       setIsEditOpen(false);
-      const usersData = await fetchUsers();
-      setUsers(usersData);
+      await refetch();
     } catch (err) {
       toast.error(`Failed to update user: ${err}`);
     } finally {
@@ -142,33 +147,6 @@ const UsersPage: React.FC = () => {
       ),
     },
     {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) => {
-        const getRoleBadgeColor = (role: UserRole) => {
-          const colors = {
-            SUPER_ADMIN: "bg-red-100 text-red-800",
-            CREATOR: "bg-blue-100 text-blue-800",
-            REVIEWER: "bg-purple-100 text-purple-800",
-            APPROVER: "bg-green-100 text-green-800",
-            CLIENT: "bg-yellow-100 text-yellow-800",
-            VENDOR: "bg-orange-100 text-orange-800",
-            PARTICIPANT: "bg-gray-100 text-gray-800",
-          };
-          return colors[role] || "bg-gray-100 text-gray-800";
-        };
-
-        return (
-          <Badge
-            variant="secondary"
-            className={getRoleBadgeColor(row.original.role)}
-          >
-            {UserRoleLabels[row.original.role]}
-          </Badge>
-        );
-      },
-    },
-    {
       accessorKey: "created_at",
       header: ({ column }) => {
         return (
@@ -219,10 +197,9 @@ const UsersPage: React.FC = () => {
     const formData = new FormData(form);
 
     try {
-      setLoading(true);
+      setIsInviteLoading(true);
       const userData = {
         email: formData.get("email"),
-        role: UserRole[formData.get("role") as keyof typeof UserRole],
         password: generateRandomPassword(),
       };
 
@@ -232,46 +209,41 @@ const UsersPage: React.FC = () => {
       });
 
       toast.success("User invited successfully");
+      await refetch();
       setIsOpen(false);
-      const usersData = await fetchUsers();
-      setUsers(usersData);
     } catch (err) {
+      setIsInviteLoading(false);
       toast.error(`Failed to invite user: ${err}`);
     } finally {
-      setLoading(false);
+      setIsInviteLoading(false);
+      form.reset();
     }
   };
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      setLoading(true);
-      const usersData = await fetchUsers();
-      setUsers(usersData);
-      setLoading(false);
-    };
-    loadUsers();
-  }, []);
-
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-screen items-center justify-center bg-gradient-to-b from-white to-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-sm text-gray-500">Loading Users...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+    <div className="bg-gradient-to-b from-white to-gray-50">
+      <div className="mx-auto max-w-7xl px-1 py-8 sm:px-3 lg:px-8">
+        <div className="relative mb-8 rounded-2xl bg-white px-6 py-3 shadow-sm ring-1 ring-gray-100">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Users</h1>
           </div>
 
-          {currentUser?.role === "SUPER_ADMIN" && (
+          {currentUser?.role === UserRole.SUPER_ADMIN && (
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto" size="lg">
+                <Button className="group relative overflow-hidden bg-primary transition-all hover:bg-primary/90" size="lg">
                   <PlusCircle className="mr-2 h-5 w-5" />
                   Invite User
                 </Button>
@@ -292,27 +264,10 @@ const UsersPage: React.FC = () => {
                         required
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="role">Role</Label>
-                      <Select name="role" required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.values(UserRole)
-                            .filter((role) => role !== UserRole.SUPER_ADMIN)
-                            .map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {role}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={loading}>
-                      {loading && (
+                    <Button type="submit" disabled={isInviteLoading}>
+                      {isInviteLoading && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
                       Send Invitation
@@ -323,13 +278,25 @@ const UsersPage: React.FC = () => {
             </Dialog>
           )}
         </div>
+        </div>
 
-        <DataTable
-          columns={columns}
-          data={users ?? []}
-          searchKey="email"
-          searchPlaceholder="Search users..."
-        />
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={users as User[]}
+            searchKey="email"
+            searchPlaceholder="Search users..."
+            pagination={{
+              pageCount,
+              currentPage,
+              onPageChange: goToPage,
+            }}
+          />
+        )}
 
         {/* Edit User Dialog */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -339,7 +306,7 @@ const UsersPage: React.FC = () => {
                 Edit User
               </DialogTitle>
               <p className="text-sm text-gray-500">
-                Update user role and status. Changes will take effect
+                Update user. Changes will take effect
                 immediately.
               </p>
             </DialogHeader>
@@ -360,41 +327,6 @@ const UsersPage: React.FC = () => {
                     {selectedUser?.email}
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="role"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Role
-                  </Label>
-                  <Select
-                    name="role"
-                    defaultValue={selectedUser?.role}
-                    required
-                  >
-                    <SelectTrigger className="w-full border-gray-200 focus:ring-2 focus:ring-primary focus:border-primary">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px] overflow-y-auto">
-                      {Object.values(UserRole)
-                        .filter((role) => role !== UserRole.SUPER_ADMIN)
-                        .map((role) => (
-                          <SelectItem
-                            key={role}
-                            value={role}
-                            className="cursor-pointer hover:bg-gray-100"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-primary"></div>
-                              {UserRoleLabels[role]}
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="space-y-1">
                     <Label

@@ -9,7 +9,7 @@ model User {
   password         String
   first_name       String?
   last_name        String?
-  role             UserRole
+  role             UserRole @default(USER)
   profile_complete Boolean  @default(false)
 
   projects         CategoriesOnProjects[] // Represents the many-to-many relation with additional data
@@ -20,10 +20,5 @@ model User {
 
 enum UserRole {
   SUPER_ADMIN
-  CREATOR
-  REVIEWER
-  APPROVER
-  CLIENT
-  VENDOR
-  PARTICIPANT
+  USER
 }

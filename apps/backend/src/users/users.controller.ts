@@ -18,7 +18,7 @@ export class UsersController {
 
   @Patch(':id')
   async updateUser(
-    @Param('id', ParseIntPipe) id: number, // ✅ Convert id to a number
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto
   ) {
     return this.UsersService.updateUser(id, updateUserDto);

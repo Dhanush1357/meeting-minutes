@@ -40,7 +40,7 @@ export class ProjectsController {
   }
 
   @Post(':id/close')
-  async closeMom(@Param('id', ParseIntPipe) id: number, @Req() req) {
+  async closeProject(@Param('id', ParseIntPipe) id: number, @Req() req) {
     return this.ProjectsService.closeProject(id, req);
   }
 }

@@ -22,7 +22,6 @@ const ProfileCompletionModal = () => {
   const [formData, setFormData] = useState({
     first_name: currentUser?.first_name || '',
     last_name: currentUser?.last_name || '',
-    current_password: '',
     new_password: '',
     confirm_password: ''
   });

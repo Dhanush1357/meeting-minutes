@@ -8,6 +8,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { pick } from 'lodash';
 import { NotificationsService } from 'src/common/notification/notifications.service';
 import { MailService } from 'src/common/mail/mail.service';
+import { ProjectUserRole, UserRole } from '@prisma/client';
 
 @Injectable()
 export class ProjectsService {
@@ -40,13 +41,13 @@ export class ProjectsService {
     };
 
     // If the user is not SUPER_ADMIN, restrict projects to only those they are assigned to
-    if (req.user.role !== 'SUPER_ADMIN') {
+    if (req.user.role !== UserRole.SUPER_ADMIN) {
       where.user_roles = {
-        some: { user_id: req.user.userId },
+        some: { user_id: req.user.id },
       };
     }
 
-    return this.projectsRepository.findWithPagination(
+    return await this.projectsRepository.findWithPagination(
       req.pagination,
       where,
       undefined,
@@ -102,14 +103,15 @@ export class ProjectsService {
         },
       },
     });
+
     if (!project) {
       throw new NotFoundException(`project with ID ${id} not found`);
     }
 
     // Restrict access if user is not assigned to the project
     if (
-      req.user.role !== 'SUPER_ADMIN' &&
-      !project.user_roles.some((role) => role.user_id === req.user.userId)
+      req.user.role !== UserRole.SUPER_ADMIN &&
+      !project.user_roles.some((role) => role.user_id === req.user.id)
     ) {
       throw new UnauthorizedException('Access denied');
     }
@@ -128,19 +130,20 @@ export class ProjectsService {
    * @throws UnauthorizedException if the user is not an admin
    */
   async createProject(data, req) {
-    if (req.user.role !== 'SUPER_ADMIN') {
+    if (req.user.role !== UserRole.SUPER_ADMIN) {
       throw new UnauthorizedException('Only admins can create projects');
     }
 
     const project = await this.projectsRepository.create({
       data: {
         title: data.title,
-        creator_id: req.user.userId,
+        creator_id: req.user.id,
         user_roles: {
-          create: data.user_roles.map((role: any) => ({
-            user_id: role.user_id,
-            role: role.role,
-            assigned_by: role.assigned_by,
+          create: data.user_roles.map((user: any) => ({
+            user_id: user.user_id,
+            role: user.role,
+            assigned_by: user.assigned_by,
+            assigned_at: user.assigned_at,
           })),
         },
       },
@@ -159,8 +162,10 @@ export class ProjectsService {
 
     // Find the user with the "CREATOR" role
     const creatorRole = project.user_roles.find(
-      (role) => role.role === 'CREATOR',
+      (user) => user.role === ProjectUserRole.CREATOR,
     );
+
+    // send email notification to the creator of the project
     if (creatorRole) {
       await this.mailService.sendProjectCreatedMail(
         creatorRole.user.email,
@@ -168,8 +173,8 @@ export class ProjectsService {
       );
     }
 
-    // Notify all assigned users
-    const users = project.user_roles.map((role) => role.user_id);
+    // send web notification to all users assigned to the project
+    const users = project.user_roles.map((user) => user.user_id);
     await this.notificationService.sendNotification(
       users,
       `New project created: ${project.title}`,
@@ -197,7 +202,7 @@ export class ProjectsService {
     updateProjectDto: UpdateProjectDto,
     req: any,
   ) {
-    if (req.user.role !== 'SUPER_ADMIN') {
+    if (req.user.role !== UserRole.SUPER_ADMIN) {
       throw new UnauthorizedException('Only admins can edit projects');
     }
 
@@ -207,35 +212,29 @@ export class ProjectsService {
     });
     if (!project)
       throw new NotFoundException(`Project with ID ${id} not found`);
-
-    const updateData: any = Object.fromEntries(
-      await Promise.all(
-        Object.entries(updateProjectDto)
-          .filter(([_, value]) => value !== undefined)
-          .map(async ([key, value]) => [key, value]),
-      ),
-    );
+    const updateData: any = await this.projectsRepository.cleanObject(updateProjectDto);
 
     // Extract user_roles separately
     const { user_roles, ...otherData } = updateData;
 
     const validData = {
-      ...pick(updateData, ['title', 'is_active']),
-      updated_at: new Date(), // Set updated_at to current timestamp
+      ...pick(updateData, ['title', 'is_active', "user_roles"]),
+      updated_at: new Date(),
     };
 
     // Handle user_roles relation update
     if (user_roles) {
       validData.user_roles = {
         deleteMany: {}, // Removes all existing user_roles for the project
-        create: user_roles.map((role) => ({
-          user_id: role.user_id,
-          role: role.role,
-          assigned_by: role.assigned_by,
+        create: user_roles.map((user) => ({
+          user_id: user.user_id,
+          role: user.role,
+          assigned_by: user.assigned_by,
+          assigned_at: user.assigned_at,
         })),
       };
     }
-
+    console.log("valid===============", validData)
     const updatedProject = await this.projectsRepository.update({
       where: { id },
       data: validData,
@@ -264,7 +263,7 @@ export class ProjectsService {
    * @throws UnauthorizedException if the user is not an admin
    */
   async closeProject(id: number, req: any) {
-    if (req.user.role !== 'SUPER_ADMIN') {
+    if (req.user.role !== UserRole.SUPER_ADMIN) {
       throw new UnauthorizedException('Only admins can close projects');
     }
 

@@ -39,13 +39,12 @@ const LoginForm = () => {
 
     try {
       const data = await apiFactory<{ user: any; token: string }>(
-        API_ENDPOINTS.AUTH.LOGIN, // API endpoint
+        API_ENDPOINTS.AUTH.LOGIN,
         {
-          method: 'POST', // HTTP method
-          body: formData, // Form data to send
+          method: 'POST',
+          body: formData,
         }
       );
-      // Store user data in Zustand store
       login({
         currentUser: data.user,
         token: data.token
@@ -60,21 +59,21 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md">
-        <CardHeader className='items-center'>
+    <div className="flex items-center justify-center px-2 sm:px-4 lg:px-8 py-16 sm:py-20 lg:py-32">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className='items-center space-y-1'>
           <CardTitle className="text-2xl font-bold text-[#127285]">Welcome Back!</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <Alert variant="destructive">
+          <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+              <Alert variant="destructive" className="animate-in fade-in-50">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email"  className="text-sm font-medium">Email</Label>
               <Input
                 id="email"
                 name="email"
@@ -82,27 +81,37 @@ const LoginForm = () => {
                 placeholder="name@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full focus:ring-[#127285] focus:border-[#127285]"
+                className="w-full transition-colors focus-visible:ring-2 focus-visible:ring-[#127285]"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
+                <Link 
+                  href={`/auth/forgot-password?email=${encodeURIComponent(formData.email)}`}
+                  className="text-sm font-medium text-[#127285] hover:text-[#0e5a6a] transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full focus:ring-[#127285] focus:border-[#127285]"
+                className="w-full transition-colors focus-visible:ring-2 focus-visible:ring-[#127285]"
                 required
               />
             </div>
 
             <Button 
               type="submit" 
-              className="w-full bg-[#127285] hover:bg-[#0e5a6a] text-white"
+              className="w-full bg-[#127285] hover:bg-[#0e5a6a] text-white transition-colors"
               disabled={loading}
             >
               {loading ? (
@@ -116,11 +125,6 @@ const LoginForm = () => {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Link href={`/auth/forgot-password?email=${encodeURIComponent(formData.email)}`} className="text-[#127285] hover:underline">
-            Forgot password?
-          </Link>
-        </CardFooter>
       </Card>
     </div>
   );

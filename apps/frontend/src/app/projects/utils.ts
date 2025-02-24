@@ -4,12 +4,12 @@ import toast from "react-hot-toast";
 import { ProjectStatusType } from "./types";
 
 
-export const fetchProjects = async () => {
+export const fetchProjects = async ( _: {}, page: number = 1, pageSize: number = 10) => {
   try {
-    const response: any = await apiFactory(API_ENDPOINTS.PROJECTS.BASE, {
+    const response: any = await apiFactory(`${API_ENDPOINTS.PROJECTS.BASE}?page=${page}&limit=${pageSize}`, {
       method: "GET",
     });
-    return Array.isArray(response?.data) ? response?.data : [];
+    return response;
   } catch (err) {
     toast.error(`Failed to fetch projects: ${err}`);
     return [];

@@ -13,6 +13,8 @@ import { UsersRepository } from 'src/users/users.repository';
 import { ProjectsRepository } from 'src/projects/projects.repository';
 import { NotificationsService } from 'src/common/notification/notifications.service';
 import { MomUtils } from './utils';
+import { MoMStatus, ProjectUserRole, UserRole } from '@prisma/client';
+import { ProjectUtils } from 'src/projects/utils';
 
 @Injectable()
 export class MomService {
@@ -24,31 +26,27 @@ export class MomService {
     private readonly userRepository: UsersRepository,
     private readonly projectRepository: ProjectsRepository,
     private readonly momUtils: MomUtils,
+    private readonly projectUtils: ProjectUtils,
   ) {}
 
+  /**
+   * Fetches a paginated list of MoMs based on the project ID and other filters.
+   *
+   * @param req - The request object containing pagination and search params.
+   *
+   * @returns A paginated list of MoMs.
+   *
+   * @throws {BadRequestException} If project ID is not provided in the query.
+   */
   async getMom(req: any) {
-    const projectId = Number(req.query.project_id); // Convert project_id to number if needed
+    const projectId = Number(req.query.project_id);
 
     if (!projectId) {
       throw new BadRequestException('Project ID is required');
     }
 
-    const role = req.user.role;
-
-    const roleStatusMap: Record<string, string[]> = {
-      REVIEWER: ['IN_REVIEW', 'NEEDS_REVISION', 'CLOSED', 'APPROVED'],
-      APPROVER: ['AWAITING_APPROVAL', 'APPROVED', 'CLOSED'],
-      CLIENT: ['APPROVED', 'CLOSED'],
-      VENDOR: ['APPROVED', 'CLOSED'],
-      PARTICIPANT: ['APPROVED', 'CLOSED'],
-    };
-
-     // Apply status filter if role exists in the map, else return all for CREATOR & SUPER_ADMIN
-  const statusFilter = roleStatusMap[role] ? { status: { in: roleStatusMap[role] } } : {};
-
     const where: any = {
       project_id: projectId,
-      ...statusFilter,
       ...(req.pagination.search
         ? {
             OR: [
@@ -60,6 +58,44 @@ export class MomService {
         : {}),
     };
 
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      return this.MomRepository.findWithPagination(
+        req.pagination,
+        where,
+        undefined,
+        undefined,
+      );
+    }
+
+    // Fetch user role from project.user_roles
+    const userRole = await this.projectUtils.getUserRoleInProject(
+      projectId,
+      req.user.id,
+    );
+
+    const roleStatusMap: Record<string, string[]> = {
+      CREATOR: [
+        'CREATED',
+        'IN_REVIEW',
+        'AWAITING_APPROVAL',
+        'NEEDS_REVISION',
+        'CLOSED',
+        'APPROVED',
+      ],
+      REVIEWER: ['IN_REVIEW', 'NEEDS_REVISION', 'CLOSED', 'APPROVED'],
+      APPROVER: ['AWAITING_APPROVAL', 'APPROVED', 'CLOSED'],
+      CLIENT: ['APPROVED', 'CLOSED'],
+      VENDOR: ['APPROVED', 'CLOSED'],
+      PARTICIPANT: ['APPROVED', 'CLOSED'],
+    };
+
+    // Apply status filter if role exists in the map, else return all for CREATOR & SUPER_ADMIN
+    const statusFilter = roleStatusMap[userRole]
+      ? { status: { in: roleStatusMap[userRole] } }
+      : {};
+
+    Object.assign(where, statusFilter);
+
     return this.MomRepository.findWithPagination(
       req.pagination,
       where,
@@ -68,10 +104,18 @@ export class MomService {
     );
   }
 
+  /**
+   * Fetches a MoM by its ID
+   *
+   * @param id - The MoM ID
+   * @param req - The request object
+   * @returns The MoM object
+   * @throws {NotFoundException} If no MoM is found with the given ID
+   */
   async getMomById(id: number, req: any) {
     const mom = await this.MomRepository.findFirst({
       where: { id },
-      include: {created_by:true}
+      include: { created_by: true },
     });
     if (!mom) {
       throw new NotFoundException(`mom with ID ${id} not found`);
@@ -80,13 +124,53 @@ export class MomService {
     return mom;
   }
 
+  /**
+   * Creates a new MoM entry
+   *
+   * @param data - The MoM data
+   * @param req - The request object
+   * @returns The created MoM entry
+   * @throws {NotFoundException} If the project with given ID is not found
+   * @throws {UnauthorizedException} If the user is not a member of the project or if the user does not have the necessary permissions to create a MoM
+   */
   async createMom(data, req) {
-    if (req.user.role !== 'CREATOR' && req.user.role !== 'SUPER_ADMIN') {
+    const project = await this.projectUtils.getProjectDetails(data.project_id);
+
+    if (!project) {
+      throw new NotFoundException(
+        `Project with ID ${data.project_id} not found`,
+      );
+    }
+
+    let userRole;
+
+    // Check if user exists in user_roles
+    const userRoleEntry = project.user_roles.find(
+      (user) => user.user_id === req.user.id,
+    );
+
+    if (userRoleEntry) {
+      userRole = userRoleEntry.role;
+    } else if (project.creator_id === req.user.id) {
+      // If user is the creator return role from created_by column
+      userRole = project.created_by.role;
+    } else {
+      throw new UnauthorizedException('You are not a member of this project');
+    }
+
+    // Check if user has the necessary permissions to create a MoM
+    if (
+      userRole !== ProjectUserRole.CREATOR &&
+      userRole !== UserRole.SUPER_ADMIN
+    ) {
       throw new UnauthorizedException('Only creators & admins can create mom');
     }
 
     // Determine status based on user role
-    const status = req.user.role === 'SUPER_ADMIN' ? 'APPROVED' : 'CREATED';
+    const status =
+      req.user.role === UserRole.SUPER_ADMIN
+        ? MoMStatus.APPROVED
+        : MoMStatus.CREATED;
 
     // Determine MoM number if reference_mom_id is present
     let momNumber: string | null = null;
@@ -106,41 +190,23 @@ export class MomService {
     // Create a new MoM entry
     const createdMom = await this.MomRepository.create({
       data: {
-        creator_id: req.user.userId,
+        creator_id: req.user.id,
+        project_id: data.project_id,
         title: data.title,
-        status,
-        place: data.place,
         discussion: data.discussion,
         open_issues: data.open_issues,
         updates: data.updates,
         notes: data.notes,
-        project_id: data.project_id,
+        completion_date: data.completion_date,
+        place: data.place,
         reference_mom_id: data.reference_mom_id,
         mom_number: momNumber,
+        status,
       },
     });
 
     // If creator is SUPER_ADMIN, generate PDF and send email
-    if (req.user.role === 'SUPER_ADMIN') {
-      const creator = await this.userRepository.findFirst({
-        where: { id: req.user.userId },
-      });
-
-      const project = await this.projectRepository.findFirst({
-        where: { id: data.project_id },
-        include: {
-          user_roles: {
-            include: {
-              user: {
-                select: {
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
+    if (req.user.role === UserRole.SUPER_ADMIN) {
       // Generate PDF
       const pdfBuffer = await this.pdfGenerationService.generateMoMPdf(
         createdMom,
@@ -157,45 +223,57 @@ export class MomService {
           },
         ],
         project,
-        creator,
+        createdMom.created_by,
       );
     }
 
     return createdMom;
   }
 
+  /**
+   * Updates a MoM by ID
+   *
+   * The method takes into account the user's role and only allows admins, creators, reviewers & approvers to edit MoMs
+   *
+   * @param id The ID of the MoM to update
+   * @param updateMomDto The update payload
+   * @param req The request object containing the user details
+   * @returns The updated MoM with the user roles and user details
+   * @throws UnauthorizedException if the user is not an admin, creator, reviewer or approver
+   */
   async updateMom(id: number, updateMomDto: UpdateMomDto, req: any) {
+    const projectId = updateMomDto.project_id;
+
+    // Fetch user role from project.user_roles
+    const userRole = await this.projectUtils.getUserRoleInProject(
+      projectId,
+      req.user.id,
+    );
+
     if (
-      req.user.role !== 'CREATOR' &&
-      req.user.role !== 'SUPER_ADMIN' &&
-      req.user.role !== 'REVIEWER' &&
-      req.user.role !== 'APPROVER'
+      userRole !== UserRole.SUPER_ADMIN &&
+      userRole !== ProjectUserRole.CREATOR &&
+      userRole !== ProjectUserRole.REVIEWER &&
+      userRole !== ProjectUserRole.APPROVER
     ) {
       throw new UnauthorizedException(
         'Only admins, creators, reviewers & approvers can edit mom',
       );
     }
 
-    const updateData: any = Object.fromEntries(
-      await Promise.all(
-        Object.entries(updateMomDto)
-          .filter(([_, value]) => value !== undefined)
-          .map(async ([key, value]) => [key, value]),
-      ),
-    );
+    const updateData: any = await this.projectRepository.cleanObject(updateMomDto);
 
     const validData = {
       ...pick(updateData, [
         'title',
         'is_active',
         'completion_date',
-        'place',
         'discussion',
         'open_issues',
         'updates',
         'notes',
       ]),
-      updated_at: new Date(), // Set updated_at to current timestamp
+      updated_at: new Date(),
     };
 
     return this.MomRepository.update({
@@ -204,6 +282,14 @@ export class MomService {
     });
   }
 
+/**
+ * Sends the MoM for review by updating its status and notifying the reviewers.
+ *
+ * @param id - The ID of the MoM to be sent for review.
+ * @param req - The request object containing user information.
+ * @returns A message indicating the MoM has been sent for review.
+ * @throws {NotFoundException} If the MoM with the given ID is not found.
+ */
   async sendForReview(id: number, req: any) {
     const mom = await this.momUtils.geMomDetails(id);
     if (!mom) {
@@ -231,6 +317,14 @@ export class MomService {
     return { message: 'MoM sent for review' };
   }
 
+  /**
+   * Sends the MoM for approval by updating its status and notifying the approvers and the creator.
+   *
+   * @param id - The ID of the MoM to be sent for approval.
+   * @param req - The request object containing user information.
+   * @returns A message indicating the MoM has been sent for approval.
+   * @throws {NotFoundException} If the MoM with the given ID is not found.
+   */
   async sendForApproval(id: number, req: any) {
     const mom = await this.momUtils.geMomDetails(id);
     if (!mom) {
@@ -260,6 +354,15 @@ export class MomService {
     return { message: 'MoM sent for approval' };
   }
 
+  /**
+   * Rejects the MoM by the reviewer, updates its status to 'NEEDS_REVISION',
+   * and notifies the creator.
+   *
+   * @param id - The ID of the MoM to be rejected.
+   * @param req - The request object containing user information.
+   * @returns A message indicating the MoM has been rejected by the reviewer.
+   * @throws {NotFoundException} If the MoM with the given ID is not found.
+   */
   async rejectByReviewer(id: number, req: any) {
     const mom = await this.momUtils.geMomDetails(id);
     if (!mom) {
@@ -286,6 +389,15 @@ export class MomService {
     return { message: 'MoM rejected by reviewer' };
   }
 
+  /**
+   * Approves the MoM by the approver, updates its status to 'APPROVED',
+   * generates a PDF, and notifies all users in the project.
+   *
+   * @param id - The ID of the MoM to be approved.
+   * @param req - The request object containing user information.
+   * @returns A message indicating the MoM has been approved by the approver and notifications have been sent.
+   * @throws {NotFoundException} If the MoM with the given ID is not found.
+   */
   async approve(id: number, req: any) {
     const mom = await this.momUtils.geMomDetails(id);
     if (!mom) {
@@ -345,9 +457,12 @@ export class MomService {
     });
 
     // Extract reviewers from project.user_roles
-    const usersObject = this.momUtils.getUsersByRoles(mom, ['CREATOR', 'REVIEWER' ]);
+    const usersObject = this.momUtils.getUsersByRoles(mom, [
+      'CREATOR',
+      'REVIEWER',
+    ]);
 
-   // Notify creator & reviewer
+    // Notify creator & reviewer
     await this.notificationService.sendNotification(
       usersObject.map((user) => user.user_id),
       `MoM Rejected by Approver`,
@@ -370,16 +485,16 @@ export class MomService {
       data: { status: 'CLOSED' },
     });
 
-     // Extract reviewers from project.user_roles
-     const usersObject = this.momUtils.getUsersByRoles(mom, "ALL");
+    // Extract reviewers from project.user_roles
+    const usersObject = this.momUtils.getUsersByRoles(mom, 'ALL');
 
-     // Notify all
-     await this.notificationService.sendNotification(
-       usersObject.map((user) => user.user_id),
-       `MoM is marked as Closed`,
-       mom.project_id,
-       'MOM_REJECTED',
-     );
+    // Notify all
+    await this.notificationService.sendNotification(
+      usersObject.map((user) => user.user_id),
+      `MoM is marked as Closed`,
+      mom.project_id,
+      'MOM_REJECTED',
+    );
     return { message: 'MoM closed and notifications sent' };
   }
 }

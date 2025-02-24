@@ -36,17 +36,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased  min-h-full flex flex-col bg-gray-50`}
       >
         <Navbar />
-        <div className="pt-16">
-          <header className="p-4 bg-white shadow">
-            <Breadcrumbs />
+        <div className="flex-1 flex flex-col pt-16">
+          <header className="bg-white border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <Breadcrumbs />
+            </div>
           </header>
-          <RootLayoutClient>{children}</RootLayoutClient>
+          <main className="flex-1 bg-gradient-to-b from-white to-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <RootLayoutClient>{children}</RootLayoutClient>
+            </div>
+          </main>
         </div>
       </body>
     </html>
