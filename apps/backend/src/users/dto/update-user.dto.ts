@@ -1,5 +1,5 @@
 import { UserRole } from '@prisma/client';
-import { IsBoolean, IsString } from 'class-validator';
+import { IsBoolean, IsEmail, IsString } from 'class-validator';
 
 export class UpdateUserDto {
   @IsString()
@@ -7,6 +7,9 @@ export class UpdateUserDto {
 
   @IsString()
   last_name?: string;
+
+  @IsEmail()
+  email?: string;
 
   profile_complete?: boolean;
 

@@ -82,7 +82,7 @@ export class UsersService {
 
     // Pick only the properties defined in UpdateProjectDto
     const validData = {
-      ...pick(updateData, ['first_name', 'last_name', 'profile_complete', 'is_active', 'password']),
+      ...pick(updateData, ['first_name', 'last_name', 'profile_complete', 'is_active', 'password', 'email']),
       updated_at: new Date()
     };
 
@@ -96,7 +96,11 @@ export class UsersService {
       data: validData,
       select: {
         id: true,
+        created_at: true,
+        updated_at: true,
+        is_active: true,
         email: true,
+        password: false,
         first_name: true,
         last_name: true,
         profile_complete: true,

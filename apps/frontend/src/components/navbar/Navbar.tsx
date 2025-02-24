@@ -139,7 +139,7 @@ const Navbar = () => {
                           </span>
                         </div>
                         <Link
-                          href="/profile"
+                          href="/users/profile"
                           className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         >
                           <Settings className="w-4 h-4 mr-2" />
