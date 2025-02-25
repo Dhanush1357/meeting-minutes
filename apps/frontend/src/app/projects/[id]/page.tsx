@@ -40,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { MomStatusLabels } from "./mom/constants";
 import { formatDate } from "@/lib/utils";
+import { hasProjectRole } from "./utils";
 
 const ProjectDetailPage: React.FC = () => {
   const params = useParams();
@@ -68,8 +69,7 @@ const ProjectDetailPage: React.FC = () => {
   });
 
   const isMoMCreator =
-    (currentUser?.role === UserRole.CREATOR ||
-      currentUser?.role === UserRole.SUPER_ADMIN) &&
+    (currentUser?.role === UserRole.SUPER_ADMIN || hasProjectRole(project?.user_roles, Number(currentUser?.id), [UserRole.CREATOR]) ) &&
     project?.status != ProjectStatusType.CLOSED;
 
   useEffect(() => {
@@ -357,7 +357,7 @@ const ProjectDetailPage: React.FC = () => {
                   <MoMForm
                     isOpen={isOpen}
                     setIsOpen={setIsOpen}
-                    projectId={Number(project?.id)}
+                    project={project}
                     loading={submissionLoading}
                     onSubmit={handleCreateMoM}
                   />

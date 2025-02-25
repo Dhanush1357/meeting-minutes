@@ -88,6 +88,7 @@ export class MailService {
     attachments: any[],
     project: any,
     creator: User,
+    usersToSend: any[],
   ): Promise<void> {
     try {
       const emailContent =
@@ -98,11 +99,10 @@ export class MailService {
             <p>Please find the meeting minutes attached.</p>
           </div>
         `;
-      const users = project.user_roles.map((role) => role.user.email);
 
       const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: users,
+        to: usersToSend,
         subject: 'New Project Created By Admin!',
         html: emailContent,
         attachments: attachments,

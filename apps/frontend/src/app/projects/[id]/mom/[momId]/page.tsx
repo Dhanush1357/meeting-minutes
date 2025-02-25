@@ -338,7 +338,7 @@ const MoMDetailPage: React.FC = () => {
             </CardHeader>
 
             <div className="px-6 pt-4 pb-2 bg-white">
-              <div className="flex items-center">
+              <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm">
                     Creator: {mom?.created_by?.first_name}{" "}
@@ -351,7 +351,8 @@ const MoMDetailPage: React.FC = () => {
                 <MoMActionButtons
                   momId={mom.id}
                   status={mom.status}
-                  userRole={currentUser?.role as string}
+                  userRole={mom.project.user_roles}
+                  currentUser={currentUser}
                   onStatusUpdate={() => loadMoM()}
                 />
               </div>

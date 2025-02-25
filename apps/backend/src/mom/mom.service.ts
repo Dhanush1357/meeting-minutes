@@ -118,7 +118,13 @@ export class MomService {
       include: {
         project: {
           select: {
-            user_roles: { select: { user: { select: { first_name: true, last_name:true } } }, },
+            user_roles: {
+              select: {
+                role: true,
+                user_id: true,
+                user: { select: { first_name: true, last_name: true } },
+              },
+            },
           },
         },
         created_by: {
@@ -249,12 +255,10 @@ export class MomService {
     });
 
     // If creator is SUPER_ADMIN, generate PDF and send email
-    if (req.user.role === UserRole.SUPER_ADMIN) {
+    if (req.user.role === UserRole.SUPER_ADMIN && cleanedData?.user_emails) {
       // Generate PDF
-      const pdfBuffer = await this.pdfGenerationService.generateMoMPdf(
-        createdMom,
-        project,
-      );
+      const pdfBuffer =
+        await this.pdfGenerationService.generateMoMPdf(createdMom);
 
       // Send email with PDF attachment
       await this.mailService.sendMoMCreatedEmail(
@@ -267,6 +271,7 @@ export class MomService {
         ],
         project,
         createdMom.created_by,
+        cleanedData.user_emails,
       );
     }
 
@@ -481,10 +486,7 @@ export class MomService {
       'MOM_ACCEPTED',
     );
     // Generate PDF
-    const pdfBuffer = await this.pdfGenerationService.generateMoMPdf(
-      mom,
-      project,
-    );
+    const pdfBuffer = await this.pdfGenerationService.generateMoMPdf(mom);
     await this.mailService.notifyApproval(mom, pdfBuffer, project);
     return { message: 'MoM approved and notifications sent' };
   }

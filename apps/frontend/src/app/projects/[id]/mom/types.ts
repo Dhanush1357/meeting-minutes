@@ -8,8 +8,9 @@ type TaskInputProps = {
   label: string;
   points: Point[];
   setPoints: (points: Point[]) => void;
+  userRole: any;
+  hasRole: any;
   status?: string;
-  userRole?: string;
   isCreator?: boolean;
 };
 
@@ -38,8 +39,8 @@ type MoMFormData = {
 type MoMFormProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  project?: any;
   loading?: boolean;
-  projectId?: number;
   onSubmit: any;
   initialData?: MoMFormData;
   editMode?: boolean;

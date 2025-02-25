@@ -33,6 +33,8 @@ import {
 import { MoMStatus } from "../types";
 import { UserRole } from "@/app/users/types";
 import { formatDate } from "@/lib/utils";
+import { hasProjectRole } from "../utils";
+import { MultiSelectUsers } from "@/components/MultiSelectUser";
 
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -43,8 +45,9 @@ const TaskInput: React.FC<TaskInputProps> = React.memo(
     label,
     points,
     setPoints,
+    userRole,
+    hasRole,
     status = "CREATED",
-    userRole = "",
     isCreator = false,
   }) => {
     // State to track if we're in "edit all" mode
@@ -54,13 +57,8 @@ const TaskInput: React.FC<TaskInputProps> = React.memo(
     const canEdit = useMemo(() => {
       if (status === MoMStatus.APPROVED || status === MoMStatus.CLOSED)
         return false;
-      return (
-        isCreator ||
-        userRole === UserRole.REVIEWER ||
-        userRole === UserRole.APPROVER ||
-        userRole === UserRole.SUPER_ADMIN
-      );
-    }, [status, isCreator, userRole]);
+      return isCreator || userRole === UserRole.SUPER_ADMIN || hasRole;
+    }, [status, isCreator]);
 
     const canToggleComplete = useMemo(() => {
       return status !== MoMStatus.CLOSED;
@@ -297,7 +295,7 @@ const ImportSection: React.FC<{
 const MoMForm: React.FC<MoMFormProps> = ({
   isOpen,
   setIsOpen,
-  projectId,
+  project,
   loading = false,
   onSubmit,
   initialData,
@@ -318,10 +316,10 @@ const MoMForm: React.FC<MoMFormProps> = ({
   const [importDialogOpen, setImportDialogOpen] = useState<boolean>(false);
   const [existingMoMs, setExistingMoMs] = useState<ExistingMoM[]>([]);
   const [isLoadingMoMs, setIsLoadingMoMs] = useState<boolean>(false);
-  
+
   // Track reference MoM IDs as an array
   const [referenceMomIds, setReferenceMomIds] = useState<string[]>([]);
-  
+
   // Track imported points by source MoM ID
   const [importedPointsMap, setImportedPointsMap] = useState<{
     [momId: string]: {
@@ -329,10 +327,34 @@ const MoMForm: React.FC<MoMFormProps> = ({
       openIssues: string[];
       updates: string[];
       notes: string[];
-    }
+    };
   }>({});
 
   const { currentUser } = useAuthStore();
+  const hasRole = hasProjectRole(project?.user_roles, Number(currentUser?.id), [
+    UserRole.CREATOR,
+    UserRole.APPROVER,
+    UserRole.REVIEWER,
+  ]);
+
+  const [selectedUserEmails, setSelectedUserEmails] = React.useState([]);
+
+  const projectUsers = React.useMemo(() => {
+    if (!project?.user_roles) return [];
+    
+    return project.user_roles.map((userRole:any) => ({
+      id: userRole.user.email, // Use email as the ID for selection
+      first_name: userRole.user.first_name,
+      last_name: userRole.user.last_name,
+      email: userRole.user.email,
+      role: userRole.role
+    }));
+  }, [project?.user_roles]);
+
+  // Handle user selection (now emails)
+  const handleUserSelection = (selectedEmails: any) => {
+    setSelectedUserEmails(selectedEmails);
+  };
 
   // Initialize form data
   useEffect(() => {
@@ -349,12 +371,12 @@ const MoMForm: React.FC<MoMFormProps> = ({
       setOpenIssues(addIds(initialData.open_issues || []));
       setUpdates(addIds(initialData.updates || []));
       setNotes(addIds(initialData.notes || []));
-      
+
       // Initialize reference MoM IDs if they exist
       if (initialData.reference_mom_ids) {
         if (Array.isArray(initialData.reference_mom_ids)) {
           setReferenceMomIds(initialData.reference_mom_ids.map(String));
-        } else if (typeof initialData.reference_mom_ids === 'object') {
+        } else if (typeof initialData.reference_mom_ids === "object") {
           try {
             const parsedIds = Object.values(initialData.reference_mom_ids);
             setReferenceMomIds(parsedIds.map(String));
@@ -370,11 +392,11 @@ const MoMForm: React.FC<MoMFormProps> = ({
 
   // Load existing MoMs for import
   useEffect(() => {
-    if (isOpen && !editMode && projectId) {
+    if (isOpen && !editMode && project?.id) {
       const loadMoMs = async () => {
         setIsLoadingMoMs(true);
         try {
-          const momsData = await fetchAllMoms(projectId);
+          const momsData = await fetchAllMoms(project?.id);
           setExistingMoMs(momsData);
         } catch (error) {
           console.error("Failed to load MoMs:", error);
@@ -387,7 +409,7 @@ const MoMForm: React.FC<MoMFormProps> = ({
       };
       loadMoMs();
     }
-  }, [isOpen, projectId]);
+  }, [isOpen, project?.id]);
 
   // Form submission handler
   const handleSubmit = async () => {
@@ -400,60 +422,68 @@ const MoMForm: React.FC<MoMFormProps> = ({
     // Submit data
     await onSubmit({
       title,
-      completion_date: completionDate ? new Date(completionDate).toISOString() : "",
+      completion_date: completionDate
+        ? new Date(completionDate).toISOString()
+        : "",
       place,
       discussion,
       open_issues: openIssues,
       updates,
       notes,
-      reference_mom_ids: referenceMomIds.length > 0 ? referenceMomIds : undefined
+      reference_mom_ids:
+        referenceMomIds.length > 0 ? referenceMomIds : undefined,
+      user_emails: selectedUserEmails?.length > 0 ? selectedUserEmails : undefined,
     });
   };
 
   // Function to remove all points imported from a specific MoM
-  const removeImportedPoints = useCallback((momId: string) => {
-    const importedPoints = importedPointsMap[momId];
-    
-    if (!importedPoints) return;
-    
-    // Remove discussion points from this MoM
-    setDiscussion(prev => 
-      prev.filter(point => !importedPoints.discussion.includes(point.id))
-    );
-    
-    // Remove open issues from this MoM
-    setOpenIssues(prev => 
-      prev.filter(point => !importedPoints.openIssues.includes(point.id))
-    );
-    
-    // Remove updates from this MoM
-    setUpdates(prev => 
-      prev.filter(point => !importedPoints.updates.includes(point.id))
-    );
-    
-    // Remove notes from this MoM
-    setNotes(prev => 
-      prev.filter(point => !importedPoints.notes.includes(point.id))
-    );
-    
-    // Update the imported points map to remove this MoM's tracking
-    setImportedPointsMap(prev => {
-      const newMap = { ...prev };
-      delete newMap[momId];
-      return newMap;
-    });
-    
-  }, [importedPointsMap]);
+  const removeImportedPoints = useCallback(
+    (momId: string) => {
+      const importedPoints = importedPointsMap[momId];
+
+      if (!importedPoints) return;
+
+      // Remove discussion points from this MoM
+      setDiscussion((prev) =>
+        prev.filter((point) => !importedPoints.discussion.includes(point.id))
+      );
+
+      // Remove open issues from this MoM
+      setOpenIssues((prev) =>
+        prev.filter((point) => !importedPoints.openIssues.includes(point.id))
+      );
+
+      // Remove updates from this MoM
+      setUpdates((prev) =>
+        prev.filter((point) => !importedPoints.updates.includes(point.id))
+      );
+
+      // Remove notes from this MoM
+      setNotes((prev) =>
+        prev.filter((point) => !importedPoints.notes.includes(point.id))
+      );
+
+      // Update the imported points map to remove this MoM's tracking
+      setImportedPointsMap((prev) => {
+        const newMap = { ...prev };
+        delete newMap[momId];
+        return newMap;
+      });
+    },
+    [importedPointsMap]
+  );
 
   // Handle removing MoM from reference list and all its data
-  const handleRemoveMoM = useCallback((momId: string) => {
-    // Remove the MoM ID from references
-    setReferenceMomIds(prev => prev.filter(id => id !== momId));
-    
-    // Remove all points that were imported from this MoM
-    removeImportedPoints(momId);
-    
-  }, [removeImportedPoints]);
+  const handleRemoveMoM = useCallback(
+    (momId: string) => {
+      // Remove the MoM ID from references
+      setReferenceMomIds((prev) => prev.filter((id) => id !== momId));
+
+      // Remove all points that were imported from this MoM
+      removeImportedPoints(momId);
+    },
+    [removeImportedPoints]
+  );
 
   // Import handler - adds to the referenceMomIds array
   const handleImport = useCallback(
@@ -471,7 +501,7 @@ const MoMForm: React.FC<MoMFormProps> = ({
         discussion: [],
         openIssues: [],
         updates: [],
-        notes: []
+        notes: [],
       };
 
       // Add IDs to imported points and keep track of them
@@ -484,22 +514,31 @@ const MoMForm: React.FC<MoMFormProps> = ({
       };
 
       // Import all sections with tracking
-      const newDiscussionPoints = addIdsAndTrack(momData.discussion || [], trackingData.discussion);
-      const newOpenIssues = addIdsAndTrack(momData.open_issues || [], trackingData.openIssues);
-      const newUpdates = addIdsAndTrack(momData.updates || [], trackingData.updates);
+      const newDiscussionPoints = addIdsAndTrack(
+        momData.discussion || [],
+        trackingData.discussion
+      );
+      const newOpenIssues = addIdsAndTrack(
+        momData.open_issues || [],
+        trackingData.openIssues
+      );
+      const newUpdates = addIdsAndTrack(
+        momData.updates || [],
+        trackingData.updates
+      );
       const newNotes = addIdsAndTrack(momData.notes || [], trackingData.notes);
 
       // Update the tracking map
-      setImportedPointsMap(prev => ({
+      setImportedPointsMap((prev) => ({
         ...prev,
-        [momId]: trackingData
+        [momId]: trackingData,
       }));
 
       // Update the state with the new points
-      setDiscussion(prev => [...prev, ...newDiscussionPoints]);
-      setOpenIssues(prev => [...prev, ...newOpenIssues]);
-      setUpdates(prev => [...prev, ...newUpdates]);
-      setNotes(prev => [...prev, ...newNotes]);
+      setDiscussion((prev) => [...prev, ...newDiscussionPoints]);
+      setOpenIssues((prev) => [...prev, ...newOpenIssues]);
+      setUpdates((prev) => [...prev, ...newUpdates]);
+      setNotes((prev) => [...prev, ...newNotes]);
 
       toast("MoM imported successfully.");
     },
@@ -509,15 +548,18 @@ const MoMForm: React.FC<MoMFormProps> = ({
   // Create a UI component to display imported MoMs
   const ImportedMoMsList = () => {
     if (referenceMomIds.length === 0) return null;
-    
+
     return (
       <div className="mt-4">
         <h4 className="text-sm font-medium text-gray-500">Imported From:</h4>
         <div className="flex flex-wrap gap-2 mt-1">
-          {referenceMomIds.map(id => {
-            const mom = existingMoMs.find(mom => String(mom.id) === id);
+          {referenceMomIds.map((id) => {
+            const mom = existingMoMs.find((mom) => String(mom.id) === id);
             return (
-              <div key={id} className="inline-flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm">
+              <div
+                key={id}
+                className="inline-flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm"
+              >
                 <span className="truncate max-w-[200px]">
                   {mom ? mom.title : `MoM #${id}`}
                 </span>
@@ -591,6 +633,7 @@ const MoMForm: React.FC<MoMFormProps> = ({
                       value={completionDate}
                       onChange={(e) => setCompletionDate(e.target.value)}
                       className="mt-1"
+                      required
                     />
                   </div>
                   <div>
@@ -606,6 +649,24 @@ const MoMForm: React.FC<MoMFormProps> = ({
                       className="mt-1"
                     />
                   </div>
+                  {currentUser?.role ===UserRole.SUPER_ADMIN && 
+                  <div>
+                    <Label
+                      htmlFor="participants"
+                      className="text-base font-medium"
+                    >
+                      Send MoM To
+                    </Label>
+                    <div className="mt-1">
+                      <MultiSelectUsers
+                        users={projectUsers}
+                        selectedUsers={selectedUserEmails}
+                        onSelect={handleUserSelection}
+                        placeholder="Select participants..."
+                      />
+                    </div>
+                  </div>
+}
                 </div>
                 <ImportedMoMsList />
               </div>
@@ -637,6 +698,7 @@ const MoMForm: React.FC<MoMFormProps> = ({
               setPoints={setDiscussion}
               status={initialData?.status}
               userRole={currentUser?.role}
+              hasRole={hasRole}
               isCreator={initialData?.creator === currentUser?.id}
             />
             <TaskInput
@@ -645,6 +707,7 @@ const MoMForm: React.FC<MoMFormProps> = ({
               setPoints={setOpenIssues}
               status={initialData?.status}
               userRole={currentUser?.role}
+              hasRole={hasRole}
               isCreator={initialData?.creator === currentUser?.id}
             />
             <TaskInput
@@ -653,6 +716,7 @@ const MoMForm: React.FC<MoMFormProps> = ({
               setPoints={setUpdates}
               status={initialData?.status}
               userRole={currentUser?.role}
+              hasRole={hasRole}
               isCreator={initialData?.creator === currentUser?.id}
             />
             <TaskInput
@@ -661,12 +725,17 @@ const MoMForm: React.FC<MoMFormProps> = ({
               setPoints={setNotes}
               status={initialData?.status}
               userRole={currentUser?.role}
+              hasRole={hasRole}
               isCreator={initialData?.creator === currentUser?.id}
             />
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={loading} className="bg-[#127285] hover:bg-[#388e9e] text-white">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-[#127285] hover:bg-[#388e9e] text-white"
+            >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editMode ? "Update MoM" : "Create MoM"}
             </Button>

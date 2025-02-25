@@ -20,10 +20,10 @@ export function usePagination<T>({ fetchFn, initialParams = {}, pageSize = 10 }:
       try {
         setLoading(true);
         const response = await fetchFn(updatedParams, page, pageSize);
-        setData(response.data);
-        setMeta(response.meta);
-        setPageCount(response.meta.totalPages);
-        setCurrentPage(response.meta.currentPage);
+        setData(response?.data);
+        setMeta(response?.meta);
+        setPageCount(response?.meta?.totalPages);
+        setCurrentPage(response?.meta?.currentPage);
       } catch (error) {
         toast.error("Failed to fetch data");
         console.error("Error fetching data:", error);

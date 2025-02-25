@@ -1,3 +1,4 @@
+import { ProjectType } from "../types";
 import { MoMStatus } from "./types";
 
 export const getMoMStatusBadgeColor = (status: MoMStatus): string => {
@@ -17,4 +18,8 @@ export const getMoMStatusBadgeColor = (status: MoMStatus): string => {
     default:
       return "bg-gray-100 text-gray-800";
   }
+};
+
+export const hasProjectRole = (user_roles:any, userId: number, roles: string[]) => {
+  return user_roles?.some((user: any) => roles.includes(user.role) && user.user_id === userId);
 };

@@ -12,11 +12,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { hasProjectRole } from '../../utils';
+import { UserRole } from '@/app/users/types';
 
 interface MoMActionButtonsProps {
   momId: string | number;
   status: string;
-  userRole: string;
+  userRole: any;
+  currentUser: any;
   onStatusUpdate: () => void;
 }
 
@@ -24,6 +27,7 @@ const MoMActionButtons: React.FC<MoMActionButtonsProps> = ({
   momId,
   status,
   userRole,
+  currentUser,
   onStatusUpdate
 }) => {
   const [loading, setLoading] = useState(false);
@@ -70,13 +74,13 @@ const MoMActionButtons: React.FC<MoMActionButtonsProps> = ({
     }
   };
 
-  const showCreatorActions = userRole === "CREATOR" && status === "CREATED";
-  const showReviewerActions = userRole === "REVIEWER" && status === "IN_REVIEW";
-  const showApproverActions = userRole === "APPROVER" && status === "AWAITING_APPROVAL";
+  const showCreatorActions = status === "CREATED" && (hasProjectRole(userRole, currentUser?.id, [UserRole.CREATOR]) || currentUser?.role === UserRole.SUPER_ADMIN);
+  const showReviewerActions = status === "IN_REVIEW" && (hasProjectRole(userRole, currentUser?.id, [UserRole.REVIEWER]) || currentUser?.role === UserRole.SUPER_ADMIN);
+  const showApproverActions = status === "AWAITING_APPROVAL" && (hasProjectRole(userRole, currentUser?.id, [UserRole.APPROVER]) || currentUser?.role === UserRole.SUPER_ADMIN);
 
   return (
     <>
-      <div className="flex gap-4 mt-6">
+      <div className="flex gap-4">
         {/* Creator Actions */}
         {showCreatorActions && (
           <Button
