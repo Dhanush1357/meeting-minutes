@@ -129,8 +129,8 @@ export default function Notifications() {
                 </div>
               ) : (
                 <div className="grid gap-0.5 p-1">
-                  {notifications.map((notification) => (
-                    <div key={notification.id} className="group relative">
+                  {notifications.map((index: any, notification: any) => (
+                    <div key={index} className="group relative">
                       <button
                         className={cn(
                           "w-full text-left px-4 py-3 space-y-1",

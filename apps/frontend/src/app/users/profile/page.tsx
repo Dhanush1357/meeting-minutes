@@ -59,7 +59,6 @@ export default function ProfilePage() {
             method: "GET",
           }
         );
-        console.log("User profile fetched:", userData);
         setUser(userData);
         setFormData({
           first_name: userData.first_name,

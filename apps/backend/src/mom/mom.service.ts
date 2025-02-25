@@ -115,7 +115,27 @@ export class MomService {
   async getMomById(id: number, req: any) {
     const mom = await this.MomRepository.findFirst({
       where: { id },
-      include: { created_by: true },
+      include: {
+        project: {
+          select: {
+            user_roles: { select: { user: { select: { first_name: true, last_name:true } } }, },
+          },
+        },
+        created_by: {
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            is_active: true,
+            email: true,
+            password: false,
+            first_name: true,
+            last_name: true,
+            role: true,
+            profile_complete: true,
+          },
+        },
+      },
     });
     if (!mom) {
       throw new NotFoundException(`mom with ID ${id} not found`);
@@ -175,31 +195,54 @@ export class MomService {
     // Determine MoM number if reference_mom_id is present
     let momNumber: string | null = null;
 
-    if (data?.reference_mom_id) {
+    if (
+      data?.reference_mom_ids &&
+      Array.isArray(data.reference_mom_ids) &&
+      data.reference_mom_ids.length > 0
+    ) {
       const lastMom = await this.MomRepository.findFirst({
         where: { project_id: data.project_id },
         orderBy: { id: 'desc' },
         select: { mom_number: true },
       });
 
-      momNumber = lastMom
+      const isValidNumber =
+        lastMom?.mom_number && !isNaN(Number(lastMom.mom_number));
+      momNumber = isValidNumber
         ? (parseInt(lastMom.mom_number) + 1).toString().padStart(3, '0')
         : '001';
+    }
+    const cleanedData = await this.projectRepository.cleanObject(data);
+
+    // Parse reference_mom_ids to ensure it's properly formatted
+    let reference_mom_ids;
+    if (cleanedData.reference_mom_ids) {
+      if (Array.isArray(cleanedData.reference_mom_ids)) {
+        reference_mom_ids = cleanedData.reference_mom_ids;
+      } else if (typeof cleanedData.reference_mom_ids === 'string') {
+        try {
+          reference_mom_ids = JSON.parse(cleanedData.reference_mom_ids);
+        } catch (e) {
+          reference_mom_ids = [cleanedData.reference_mom_ids];
+        }
+      } else {
+        reference_mom_ids = [cleanedData.reference_mom_ids];
+      }
     }
 
     // Create a new MoM entry
     const createdMom = await this.MomRepository.create({
       data: {
         creator_id: req.user.id,
-        project_id: data.project_id,
-        title: data.title,
-        discussion: data.discussion,
-        open_issues: data.open_issues,
-        updates: data.updates,
-        notes: data.notes,
-        completion_date: data.completion_date,
-        place: data.place,
-        reference_mom_id: data.reference_mom_id,
+        project_id: cleanedData.project_id,
+        title: cleanedData.title,
+        discussion: cleanedData.discussion,
+        open_issues: cleanedData.open_issues,
+        updates: cleanedData.updates,
+        notes: cleanedData.notes,
+        completion_date: cleanedData.completion_date,
+        place: cleanedData.place,
+        reference_mom_ids: reference_mom_ids,
         mom_number: momNumber,
         status,
       },
@@ -261,13 +304,15 @@ export class MomService {
       );
     }
 
-    const updateData: any = await this.projectRepository.cleanObject(updateMomDto);
+    const updateData: any =
+      await this.projectRepository.cleanObject(updateMomDto);
 
     const validData = {
       ...pick(updateData, [
         'title',
         'is_active',
         'completion_date',
+        'place',
         'discussion',
         'open_issues',
         'updates',
@@ -282,14 +327,14 @@ export class MomService {
     });
   }
 
-/**
- * Sends the MoM for review by updating its status and notifying the reviewers.
- *
- * @param id - The ID of the MoM to be sent for review.
- * @param req - The request object containing user information.
- * @returns A message indicating the MoM has been sent for review.
- * @throws {NotFoundException} If the MoM with the given ID is not found.
- */
+  /**
+   * Sends the MoM for review by updating its status and notifying the reviewers.
+   *
+   * @param id - The ID of the MoM to be sent for review.
+   * @param req - The request object containing user information.
+   * @returns A message indicating the MoM has been sent for review.
+   * @throws {NotFoundException} If the MoM with the given ID is not found.
+   */
   async sendForReview(id: number, req: any) {
     const mom = await this.momUtils.geMomDetails(id);
     if (!mom) {
@@ -493,7 +538,7 @@ export class MomService {
       usersObject.map((user) => user.user_id),
       `MoM is marked as Closed`,
       mom.project_id,
-      'MOM_REJECTED',
+      'MOM_CLOSED',
     );
     return { message: 'MoM closed and notifications sent' };
   }

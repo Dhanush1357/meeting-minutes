@@ -20,15 +20,30 @@ export const registerServiceWorker = () => {
   }
 };
 
-export const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString("en-US", {
+export const formatDate = (date: string | null, formatType: "date" | "time" | "full" = "full") => {
+  if (!date) return "";
+  const options: Intl.DateTimeFormatOptions = {
     year: "numeric",
     month: "long",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
-  });
+  };
+
+  if (formatType === "date") {
+    delete options.hour;
+    delete options.minute;
+    delete options.hour12;
+  } else if (formatType === "time") {
+    return new Date(date).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
+  return new Date(date).toLocaleDateString("en-US", options);
 };
 
 export const generateRandomPassword = (length = 12) => {

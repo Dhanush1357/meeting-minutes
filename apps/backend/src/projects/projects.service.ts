@@ -234,7 +234,6 @@ export class ProjectsService {
         })),
       };
     }
-    console.log("valid===============", validData)
     const updatedProject = await this.projectsRepository.update({
       where: { id },
       data: validData,

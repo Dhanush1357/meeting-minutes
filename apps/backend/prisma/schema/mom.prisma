@@ -17,7 +17,7 @@ model MoM {
   completion_date DateTime?
   place           String?
   updated_at DateTime?
-  reference_mom_id Int? // Tracks if the MoM is created based on another MoM
+  reference_mom_ids  Json? // Tracks if the MoM is created based on another MoM
   mom_number       String? // Stores values like 001, 002, etc.
 
   // Relations

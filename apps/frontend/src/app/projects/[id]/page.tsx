@@ -14,17 +14,17 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  PlusCircle,
   Loader2,
   Calendar,
   Users,
   Pencil,
   Lock,
+  ArrowUpDown,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { MoMType } from "./types";
 import { UserRole } from "@/app/users/types";
-import { ProjectType } from "../types";
+import { ProjectStatusType, ProjectType } from "../types";
 import apiFactory from "@/factories/apiFactory";
 import API_ENDPOINTS from "@/lib/apiEndpoints";
 import { Badge } from "@/components/ui/badge";
@@ -32,90 +32,68 @@ import toast from "react-hot-toast";
 import TeamMembersSection from "./teamMembers";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import MoMPreviewList from "./mom/momPreview";
 import MoMForm from "./mom/momForm";
+import { usePagination } from "@/hooks/usePagination";
+import { fetchMoms, getStatusColor } from "./mom/utils";
+import { DataTable } from "@/components/DataTable";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { MomStatusLabels } from "./mom/constants";
+import { formatDate } from "@/lib/utils";
 
 const ProjectDetailPage: React.FC = () => {
   const params = useParams();
+  const router = useRouter();
   const [project, setProject] = useState<ProjectType | null>(null);
-  const [moms, setMoms] = useState<MoMType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCloseOpen, setIsCloseOpen] = useState(false);
   const [closeLoading, setCloseLoading] = useState(false);
+  const [submissionLoading, setSubmissionLoading] = useState(false)
   const { currentUser } = useAuthStore();
 
+  const {
+    data: moms,
+    loading,
+    pageCount,
+    currentPage,
+    goToPage,
+    meta,
+    refetch,
+    updateParams,
+  } = usePagination({
+    fetchFn: fetchMoms,
+    initialParams: { projectId: params.id },
+    pageSize: 10,
+  });
+
   const isMoMCreator =
-    currentUser?.role === UserRole.CREATOR ||
-    currentUser?.role === UserRole.SUPER_ADMIN;
+    (currentUser?.role === UserRole.CREATOR ||
+      currentUser?.role === UserRole.SUPER_ADMIN) &&
+    project?.status != ProjectStatusType.CLOSED;
 
   useEffect(() => {
-    const loadProjectAndMoMs = async () => {
+    const loadProjects = async () => {
       try {
-        setLoading(true);
         const projectData = await apiFactory(
           `${API_ENDPOINTS.PROJECTS.BASE}/${params.id}`,
           { method: "GET" }
         );
         setProject(projectData as ProjectType);
-
-        const momsData: any = await apiFactory(
-          `${API_ENDPOINTS.MOM.BASE}?project_id=${params.id}`,
-          { method: "GET" }
-        );
-        setMoms(momsData?.data as MoMType[]);
       } catch (err) {
         toast.error("Failed to load project details");
       } finally {
-        setLoading(false);
+        updateParams({ projectId: params.id });
       }
     };
-
-    loadProjectAndMoMs();
+    loadProjects();
   }, [params.id]);
-
-  const handleCreateMoM = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-
-    try {
-      setLoading(true);
-      const momData = {
-        title: formData.get("title"),
-        completion_date: formData.get("completion_date"),
-        agenda: formData.get("agenda"),
-        project_id: project?.id,
-        creator_id: currentUser?.id,
-      };
-
-      await apiFactory(`${API_ENDPOINTS.PROJECTS.BASE}/${project?.id}/moms`, {
-        method: "POST",
-        body: momData,
-      });
-
-      const updatedMoMs = await apiFactory(
-        `${API_ENDPOINTS.PROJECTS.BASE}/${project?.id}/moms`,
-        { method: "GET" }
-      );
-      setMoms(updatedMoMs as MoMType[]);
-      setIsOpen(false);
-      toast.success("MoM created successfully");
-    } catch (err) {
-      toast.error("Failed to create MoM");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUpdateProject = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
     try {
-      setLoading(true);
       const updatedProjectData = {
         title: formData.get("title"),
       };
@@ -132,7 +110,6 @@ const ProjectDetailPage: React.FC = () => {
     } catch (err) {
       toast.error("Failed to update project");
     } finally {
-      setLoading(false);
     }
   };
 
@@ -153,6 +130,37 @@ const ProjectDetailPage: React.FC = () => {
     }
   };
 
+  const handleCreateMoM = async (formData: MoMFormData) => {
+    try {
+      setSubmissionLoading(true)
+      // Make sure reference_mom_ids is formatted correctly
+      let reference_mom_ids = undefined;
+      if (formData.reference_mom_ids && formData.reference_mom_ids.length > 0) {
+        // Make sure all IDs are properly parsed as numbers if needed
+        reference_mom_ids = formData.reference_mom_ids.map((id: any) =>
+          typeof id === "string" ? parseInt(id, 10) : id
+        );
+      }
+      const momData = {
+        ...formData,
+        reference_mom_ids: reference_mom_ids,
+        project_id: project?.id,
+      };
+
+      await apiFactory(`${API_ENDPOINTS.MOM.BASE}`, {
+        method: "POST",
+        body: momData,
+      });
+      setIsOpen(false);
+      toast.success("MoM created successfully");
+    } catch (err) {
+      toast.error("Failed to create MoM");
+    } finally {
+      refetch();
+      setSubmissionLoading(false)
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -161,8 +169,70 @@ const ProjectDetailPage: React.FC = () => {
     );
   }
 
+  const columns: ColumnDef<MoMType>[] = [
+    {
+      accessorKey: "id",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ID
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+    },
+    {
+      accessorKey: "title",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Title
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant="secondary"
+          className={getStatusColor(row.original.status)}
+        >
+          {MomStatusLabels[row.original.status]}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Created At
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => formatDate(row.original.created_at),
+    },
+  ];
+
+  const handleRowClick = (mom: MoMType) => {
+    router.push(`/projects/${params.id}/mom/${mom.id}`);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className=" bg-gray-50">
       {/* Project Header */}
       <div className="bg-white border-b">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -179,12 +249,12 @@ const ProjectDetailPage: React.FC = () => {
                         <DialogTrigger asChild>
                           <Button variant="outline">
                             <Pencil className="mr-2 h-5 w-5" />
-                            Edit Project
+                            Edit Title
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[700px]">
                           <DialogHeader>
-                            <DialogTitle>Edit Project</DialogTitle>
+                            <DialogTitle>Edit Project Title</DialogTitle>
                           </DialogHeader>
                           <form
                             onSubmit={handleUpdateProject}
@@ -256,7 +326,7 @@ const ProjectDetailPage: React.FC = () => {
                 <div className="mt-2 flex items-center text-sm text-gray-500">
                   <Calendar className="mr-1.5 h-4 w-4" />
                   Created on{" "}
-                  {new Date(project?.created_at || "").toLocaleDateString()}
+                  {new Date(project?.created_at || "").toLocaleString()}
                 </div>
                 <Badge
                   className={`mt-2 ${project?.status === "OPEN" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
@@ -274,7 +344,7 @@ const ProjectDetailPage: React.FC = () => {
         <Tabs defaultValue="moms" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="moms">Minutes of Meetings</TabsTrigger>
-            <TabsTrigger value="team">Team Members</TabsTrigger>
+            <TabsTrigger value="team">Assigned Members</TabsTrigger>
           </TabsList>
 
           <TabsContent value="moms">
@@ -287,19 +357,39 @@ const ProjectDetailPage: React.FC = () => {
                   <MoMForm
                     isOpen={isOpen}
                     setIsOpen={setIsOpen}
-                    loading={loading}
+                    projectId={Number(project?.id)}
+                    loading={submissionLoading}
                     onSubmit={handleCreateMoM}
                   />
                 )}
               </div>
-              <MoMPreviewList moms={moms} isMoMCreator={isMoMCreator} />
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <span className="loading loading-spinner loading-lg"></span>
+                </div>
+              ) : (
+                <DataTable
+                  columns={columns}
+                  data={moms as MoMType[]}
+                  searchKey="title"
+                  searchPlaceholder="Search MoM's..."
+                  onRowClick={handleRowClick}
+                  pagination={{
+                    pageCount,
+                    currentPage,
+                    onPageChange: goToPage,
+                  }}
+                />
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="team">
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">Team Members</h2>
-              <TeamMembersSection project={project} />
+              <h2 className="text-2xl font-bold text-gray-900">
+                Assigned Members
+              </h2>
+              <TeamMembersSection project={project} setProject={setProject} />
             </div>
           </TabsContent>
         </Tabs>

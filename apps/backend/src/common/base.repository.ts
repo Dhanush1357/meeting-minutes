@@ -32,9 +32,9 @@ export class BaseRepository {
       where,
       skip,
       take: limit,
-      orderBy: sortBy ? { [sortBy]: sortOrder } : { created_at: 'desc'  },
+      orderBy: sortBy ? { [sortBy]: sortOrder } : { created_at: 'desc' },
     };
-  
+
     // Conditionally add `select` or `include` but not both
     if (include) {
       queryOptions.include = include;
@@ -95,17 +95,32 @@ export class BaseRepository {
   }
 
   /**
-   * Recursively removes all undefined values from an object.
-   * @param obj - The object to clean.
-   * @returns A new object with all undefined values removed.
+   * Recursively removes all undefined, null, and empty string values from an object or array.
+   * @param obj - The object or array to clean.
+   * @returns A new object or array with all unwanted values removed.
    */
-  async cleanObject(obj: any) {
-    return Object.fromEntries(
-      await Promise.all(
-        Object.entries(obj)
-          .filter(([_, value]) => value !== undefined)
-          .map(async ([key, value]) => [key, value]),
-      ),
-    )
+  async cleanObject(obj: any): Promise<any> {
+    if (Array.isArray(obj)) {
+      // Clean each element in the array and remove empty elements
+      const cleanedArray = await Promise.all(
+        obj.map(async (item) => this.cleanObject(item)),
+      );
+      return cleanedArray.filter(
+        (item) => item !== undefined && item !== null && item !== '',
+      );
+    } else if (obj !== null && typeof obj === 'object') {
+      // Clean each property of the object recursively
+      return Object.fromEntries(
+        await Promise.all(
+          Object.entries(obj)
+            .filter(
+              ([_, value]) =>
+                value !== undefined && value !== null && value !== '',
+            )
+            .map(async ([key, value]) => [key, await this.cleanObject(value)]),
+        ),
+      );
+    }
+    return obj;
   }
 }

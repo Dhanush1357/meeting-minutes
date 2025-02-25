@@ -44,7 +44,7 @@ export class MomUtils {
     }
 
     if (roles === 'ALL') {
-      return mom.project.user_roles.map((userRole) => userRole.user); // Return all users
+      return mom.project.user_roles.map((userRole) => userRole); // Return all users
     }
 
     return mom.project.user_roles

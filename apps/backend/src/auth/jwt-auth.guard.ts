@@ -26,7 +26,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (!user) {
       throw new UnauthorizedException('Invalid or expired token');
     }
-    console.log("user===============",user)
+
     // Check if the user is active in the database
     const dbUser = await this.prisma.user.findUnique({
       where: { id: user.id },

@@ -1,4 +1,5 @@
 import { CurrentUserType } from "@/app/users/types";
+import { ProjectType } from "../types";
 
 interface MoMItem {
   text: string;
@@ -21,9 +22,10 @@ export interface MoMType {
   updates: MoMItem[];
   notes: MoMItem[];
   project_id: number;
-  reference_mom_id: number | null;
+  reference_mom_ids: number | null;
   mom_number: number | null;
-  created_by: CurrentUserType
+  created_by: CurrentUserType;
+  project: ProjectType
 }
 
 export enum MoMStatus {
