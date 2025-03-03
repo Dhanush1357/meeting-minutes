@@ -5,6 +5,8 @@ model MoM {
   created_at DateTime  @default(now())
   is_active  Boolean   @default(true)
   status          MoMStatus @default(CREATED)
+  category   String?
+  type       String?
 
   // creator information
   creator_id Int

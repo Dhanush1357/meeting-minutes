@@ -250,6 +250,8 @@ export class MomService {
         place: cleanedData.place,
         reference_mom_ids: reference_mom_ids,
         mom_number: momNumber,
+        category: cleanedData.category,
+        type: cleanedData.type,
         status,
       },
     });

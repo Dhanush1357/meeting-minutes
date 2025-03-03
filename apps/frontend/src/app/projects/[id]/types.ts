@@ -25,7 +25,9 @@ export interface MoMType {
   reference_mom_ids: number | null;
   mom_number: number | null;
   created_by: CurrentUserType;
-  project: ProjectType
+  project: ProjectType;
+  category: string | null;
+  type: string | null;
 }
 
 export enum MoMStatus {

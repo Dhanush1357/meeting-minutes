@@ -3,15 +3,18 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Loader2, XCircle,
+  Loader2,
+  XCircle,
   MapPin,
   CheckCircle2,
   AlertCircle,
   Edit2,
   Ban,
-  Clock, Clipboard, ChevronDown,
+  Clock,
+  Clipboard,
+  ChevronDown,
   ChevronRight,
-  NotebookPen
+  NotebookPen,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { MoMType } from "../../types";
@@ -19,10 +22,7 @@ import apiFactory from "@/factories/apiFactory";
 import API_ENDPOINTS from "@/lib/apiEndpoints";
 import { Badge } from "@/components/ui/badge";
 import toast from "react-hot-toast";
-import {
-  Card, CardHeader,
-  CardTitle
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import MoMForm from "../momForm";
 import { Button } from "@/components/ui/button";
 import MoMActionButtons from "./momActionButtons";
@@ -45,7 +45,6 @@ interface CollapsibleSectionProps {
   defaultOpen?: boolean;
   iconColor: string;
 }
-
 
 // CollapsibleSection component to avoid repetition
 const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
@@ -252,10 +251,7 @@ const MoMDetailPage: React.FC = () => {
   );
 
   const renderNotesItem = (note: any, index: any) => (
-    <div
-      key={index}
-      className={`flex items-start p-3 rounded-md`}
-    >
+    <div key={index} className={`flex items-start p-3 rounded-md`}>
       {note.completed ? (
         <CheckCircle2 className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
       ) : (
@@ -334,6 +330,14 @@ const MoMDetailPage: React.FC = () => {
                       : "No due date"}
                   </span>
                 </div>
+                {mom?.category && mom?.type && (
+                  <div className="flex flex-col ml-auto text-gray-600 bg-white/60 p-2 rounded-md w-56">
+                    <span>
+                      Category: {mom.category}
+                    </span>
+                    <span >Type: {mom.type}</span>
+                  </div>
+                )}
               </div>
             </CardHeader>
 

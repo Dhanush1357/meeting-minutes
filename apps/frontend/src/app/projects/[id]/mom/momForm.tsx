@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   PlusCircle,
   Loader2,
@@ -7,6 +7,7 @@ import {
   X,
   Check,
   Edit2,
+  ChevronDown,
 } from "lucide-react";
 import {
   Dialog,
@@ -38,6 +39,38 @@ import { MultiSelectUsers } from "@/components/MultiSelectUser";
 
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 9);
+
+const categoriesData = [
+  {
+    name: "Beverages",
+    options: [
+      "Civil & Structural",
+      "PEB",
+      "Botting Line",
+      "Sugar Dissolving System",
+      "Raw Syrup",
+      "Ready Syrup",
+      "CIP System",
+      "7 Bar Compressor",
+      "40 Bar Compressor",
+      "HVAC System",
+      "Refrigeration",
+      "Co2",
+      "Piping",
+      "Electrical LT",
+      "Electrical HT",
+      "UPS",
+      "DG",
+      "ETP",
+      "STP",
+      "ZLD",
+      "Laboratory",
+      "Finished Goods",
+      "Raw Material - Dry Part",
+      "Raw Material - Wet Part",
+    ],
+  },
+];
 
 // TaskInput component
 const TaskInput: React.FC<TaskInputProps> = React.memo(
@@ -291,6 +324,113 @@ const ImportSection: React.FC<{
   );
 };
 
+const CategorySelector: React.FC<{
+  selectedCategory: string;
+  setSelectedCategory: any;
+  selectedOption:string;
+  setSelectedOption: any;
+}> = ({ selectedCategory, setSelectedCategory, selectedOption, setSelectedOption }) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (dropdownRef.current && !dropdownRef?.current?.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
+  // Handle selection of both category and option at once
+  const handleOptionSelect = (category: any, option: any, e: any) => {
+    e.stopPropagation(); // Prevent event bubbling
+    setSelectedCategory(category);
+    setSelectedOption(option);
+    setDropdownOpen(false);
+    setExpandedCategory(null);
+  };
+
+  // Toggle category expansion
+  const toggleCategory = (category: any, e: any) => {
+    e.stopPropagation(); // Prevent event bubbling
+    setExpandedCategory(expandedCategory === category ? null : category);
+  };
+
+  // Toggle dropdown with proper event handling
+  const toggleDropdown = (e: any) => {
+    e.stopPropagation(); // Prevent event bubbling
+    e.preventDefault(); // Prevent default behavior
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="category" className="text-base font-medium">
+        Category
+      </Label>
+      <div className="relative" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={toggleDropdown}
+          className="w-full flex items-center justify-between border border-gray-300 rounded-md px-3 py-2 bg-white"
+        >
+          <span className="truncate">
+            {selectedOption ? `${selectedCategory} - ${selectedOption}` : (selectedCategory || "Select Category")}
+          </span>
+          <ChevronDown className="h-4 w-4 text-gray-500" />
+        </button>
+
+        {dropdownOpen && (
+          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+            {categoriesData.map((category) => (
+              <div key={category.name} className="border-b border-gray-100 last:border-b-0">
+                <div 
+                  className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                  onClick={(e) => toggleCategory(category.name, e)}
+                >
+                  <span>{category.name}</span>
+                  <ChevronDown 
+                    className={`h-4 w-4 text-gray-500 transition-transform ${
+                      expandedCategory === category.name ? "rotate-180" : ""
+                    }`} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCategory(category.name, e);
+                    }}
+                  />
+                </div>
+
+                {expandedCategory === category.name && (
+                  <div>
+                    {category.options.map((option) => (
+                      <div
+                        key={option}
+                        className="px-6 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        onClick={(e) => handleOptionSelect(category.name, option, e)}
+                      >
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 // Main MoMForm component
 const MoMForm: React.FC<MoMFormProps> = ({
   isOpen,
@@ -305,6 +445,8 @@ const MoMForm: React.FC<MoMFormProps> = ({
   const [title, setTitle] = useState<string>("");
   const [completionDate, setCompletionDate] = useState<string>("");
   const [place, setPlace] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedOption, setSelectedOption] = useState("");
 
   // Task state with IDs
   const [discussion, setDiscussion] = useState<Point[]>([]);
@@ -341,13 +483,13 @@ const MoMForm: React.FC<MoMFormProps> = ({
 
   const projectUsers = React.useMemo(() => {
     if (!project?.user_roles) return [];
-    
-    return project.user_roles.map((userRole:any) => ({
+
+    return project.user_roles.map((userRole: any) => ({
       id: userRole.user.email, // Use email as the ID for selection
       first_name: userRole.user.first_name,
       last_name: userRole.user.last_name,
       email: userRole.user.email,
-      role: userRole.role
+      role: userRole.role,
     }));
   }, [project?.user_roles]);
 
@@ -432,7 +574,10 @@ const MoMForm: React.FC<MoMFormProps> = ({
       notes,
       reference_mom_ids:
         referenceMomIds.length > 0 ? referenceMomIds : undefined,
-      user_emails: selectedUserEmails?.length > 0 ? selectedUserEmails : undefined,
+      user_emails:
+        selectedUserEmails?.length > 0 ? selectedUserEmails : undefined,
+      category: selectedCategory,
+      type: selectedOption,
     });
   };
 
@@ -649,24 +794,32 @@ const MoMForm: React.FC<MoMFormProps> = ({
                       className="mt-1"
                     />
                   </div>
-                  {currentUser?.role ===UserRole.SUPER_ADMIN && 
                   <div>
-                    <Label
-                      htmlFor="participants"
-                      className="text-base font-medium"
-                    >
-                      Send MoM To
-                    </Label>
-                    <div className="mt-1">
-                      <MultiSelectUsers
-                        users={projectUsers}
-                        selectedUsers={selectedUserEmails}
-                        onSelect={handleUserSelection}
-                        placeholder="Select participants..."
-                      />
-                    </div>
+                  <CategorySelector
+                    selectedCategory={selectedCategory}
+                    setSelectedCategory={setSelectedCategory}
+                    selectedOption={selectedOption}
+                    setSelectedOption={setSelectedOption}
+                  />
                   </div>
-}
+                  {currentUser?.role === UserRole.SUPER_ADMIN && (
+                    <div>
+                      <Label
+                        htmlFor="participants"
+                        className="text-base font-medium"
+                      >
+                        Send MoM To
+                      </Label>
+                      <div className="mt-1">
+                        <MultiSelectUsers
+                          users={projectUsers}
+                          selectedUsers={selectedUserEmails}
+                          onSelect={handleUserSelection}
+                          placeholder="Select participants..."
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <ImportedMoMsList />
               </div>
