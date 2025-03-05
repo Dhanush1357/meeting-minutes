@@ -85,7 +85,7 @@ const ProfileCompletionModal = () => {
 
   return (
     <Dialog open={!currentUser?.profile_complete} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Complete Your Profile</DialogTitle>
           <DialogDescription>

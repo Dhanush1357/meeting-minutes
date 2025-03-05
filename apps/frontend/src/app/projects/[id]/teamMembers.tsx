@@ -7,6 +7,7 @@ import {
   Loader2,
   UserPlus,
   Save,
+  Menu,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   const [users, setUsers] = useState<CurrentUserType[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const { currentUser } = useAuthStore();
 
   // State for tracking users in each role (for existing members)
@@ -256,18 +258,18 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
     project?.status != ProjectStatusType.CLOSED;
 
   return (
-    <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
+    <div className="mt-8 bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
+        <div className="flex items-center gap-2 mb-4 sm:mb-0">
           <Users2 className="h-6 w-6 text-gray-500" />
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
             {project?.user_roles?.length} Members
           </h2>
         </div>
         {canEditTeam && (
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Manage Team
               </Button>
@@ -299,7 +301,7 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
                     <div className="space-y-6">
                       {Object.entries(currentRoles).map(([role, users]) =>
                         users.length > 0 ? (
-                          <div  key={`role-group-${role}`} className="space-y-2">
+                          <div key={`role-group-${role}`} className="space-y-2">
                             <h4 className="text-sm font-medium text-gray-600">
                               {role}
                             </h4>
@@ -473,31 +475,82 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search by name or email..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col sm:flex-row gap-4 mb-6 relative">
+        {/* Mobile Filter Toggle */}
+        <div className="sm:hidden flex justify-end mb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+          >
+            <Menu className="mr-2 h-4 w-4" />
+            Filter
+          </Button>
         </div>
 
-        {/* Role Filter */}
-        <select
-          className="px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
-        >
-          {uniqueRoles.map((role) => (
-            <option  key={`filter-role-${role}`} value={role}>
-              {role === "ALL" ? "All Roles" : role}
-            </option>
-          ))}
-        </select>
+        {/* Mobile Filter Dropdown */}
+        {isMobileFilterOpen && (
+          <div className="sm:hidden absolute top-full right-0 z-10 bg-white border rounded-md shadow-lg p-4 mt-2 w-full">
+            <div className="space-y-4">
+              <div>
+                <Label>Search</Label>
+                <Input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setIsMobileFilterOpen(false);
+                  }}
+                />
+              </div>
+              <div>
+                <Label>Role</Label>
+                <select
+                  className="w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={selectedRole}
+                  onChange={(e) => {
+                    setSelectedRole(e.target.value);
+                    setIsMobileFilterOpen(false);
+                  }}
+                >
+                  {uniqueRoles.map((role) => (
+                    <option key={`filter-role-${role}`} value={role}>
+                      {role === "ALL" ? "All Roles" : role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Filters */}
+        <div className="hidden sm:relative sm:flex sm:flex-1 sm:items-center sm:gap-4 w-full">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search by name or email..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>               
+
+          {/* Role Filter */}
+          <select
+            className="px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+          >
+            {uniqueRoles.map((role) => (
+              <option key={`filter-role-${role}`} value={role}>
+                {role === "ALL" ? "All Roles" : role}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="overflow-hidden">
@@ -517,20 +570,20 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                     {role?.user?.first_name || ""} {role?.user?.last_name || ""}
                   </p>
                   <Badge
-                    className="ml-2"
+                    className="ml-2 text-xs"
                     variant={role.role === "REVIEWER" ? "secondary" : "outline"}
                   >
                     {role.role}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-500 truncate">
+                <p className="text-xs text-gray-500 truncate">
                   {role?.user?.email}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
                   Added {new Date(role.assigned_at).toLocaleString()}
                 </p>
               </div>
@@ -540,7 +593,7 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
 
         {filteredUsers?.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">
+            <p className="text-sm sm:text-base text-gray-500">
               No team members found matching your filters.
             </p>
           </div>

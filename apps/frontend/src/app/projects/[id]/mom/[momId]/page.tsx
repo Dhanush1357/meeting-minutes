@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronRight,
   NotebookPen,
+  Menu,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { MoMType } from "../../types";
@@ -96,6 +97,7 @@ const MoMDetailPage: React.FC = () => {
   const [mom, setMoM] = useState<MoMType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { currentUser } = useAuthStore();
 
   const loadMoM = async () => {
@@ -262,7 +264,7 @@ const MoMDetailPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-4 px-2 sm:py-6 sm:px-4 lg:px-8">
       {isEditMode ? (
         <MoMForm
           isOpen={isEditMode}
@@ -272,77 +274,125 @@ const MoMDetailPage: React.FC = () => {
           editMode={true}
         />
       ) : (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl max-w-4xl mx-auto">
           <Card className="overflow-hidden shadow-lg border-0 bg-white rounded-xl mb-6">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-6">
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                <div className="flex">
-                  <CardTitle className="text-2xl md:text-3xl font-bold text-gray-900 break-words">
-                    {mom.title}
-                  </CardTitle>
-                  <div className="ml-4">
-                    <Badge
-                      className={`${getStatusColor(mom.status)} text-sm py-1 px-3`}
-                    >
-                      {mom.status}
-                    </Badge>
-                  </div>
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-6 relative">
+              <div className="relative w-full">
+                {/* Mobile Menu Toggle */}
+                <div className="md:hidden absolute top-0 right-0 z-50">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  >
+                    <Menu className="h-6 w-6" />
+                  </Button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {canEdit && (
-                    <Button
-                      onClick={() => setIsEditMode(true)}
-                      variant="outline"
-                      className="flex items-center gap-2 bg-white"
-                      size="sm"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                      Edit
-                    </Button>
-                  )}
-                  {canClose && (
-                    <Button
-                      onClick={() => handleCloseMom()}
-                      variant="outline"
-                      className="flex items-center gap-2 bg-red-500 text-white hover:bg-red-600"
-                      size="sm"
-                    >
-                      <Ban className="h-4 w-4" />
-                      Close MoM
-                    </Button>
-                  )}
-                  <MoMPDFDownload mom={mom} />
-                </div>
-              </div>
 
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div className="flex items-center text-gray-600 bg-white/60 p-2 rounded-md">
-                  <MapPin className="mr-2 h-4 w-4 text-blue-500 flex-shrink-0" />
-                  <span className="truncate">
-                    {mom?.place || "No location specified"}
-                  </span>
-                </div>
-                <div className="flex items-center text-gray-600 bg-white/60 p-2 rounded-md w-80">
-                  <Clock className="mr-2 h-4 w-4 text-blue-500 flex-shrink-0" />
-                  <span>
-                    {mom.completion_date
-                      ? `Completion: ${formatDate(mom.completion_date)}`
-                      : "No due date"}
-                  </span>
-                </div>
-                {mom?.category && mom?.type && (
-                  <div className="flex flex-col ml-auto text-gray-600 bg-white/60 p-2 rounded-md w-56">
-                    <span>
-                      Category: {mom.category}
-                    </span>
-                    <span >Type: {mom.type}</span>
+                {/* Mobile Actions Menu */}
+                {isMobileMenuOpen && (
+                  <div className="md:hidden absolute top-10 right-0 bg-white border rounded-lg shadow-lg z-50 p-2 space-y-2">
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setIsEditMode(true);
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        <Edit2 className="mr-2 h-5 w-5" />
+                        Edit
+                      </Button>
+                    )}
+                    {canClose && (
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        onClick={() => {
+                          handleCloseMom();
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        <Ban className="mr-2 h-5 w-5" />
+                        Close MoM
+                      </Button>
+                    )}
+                    <MoMPDFDownload mom={mom} />
                   </div>
                 )}
+
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
+                        {mom.title}
+                      </CardTitle>
+                      <div className="ml-0 sm:ml-4">
+                        <Badge
+                          className={`${getStatusColor(mom.status)} text-sm py-1 px-3`}
+                        >
+                          {mom.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="hidden md:flex flex-wrap gap-2 justify-start sm:justify-end">
+                      {canEdit && (
+                        <Button
+                          onClick={() => setIsEditMode(true)}
+                          variant="outline"
+                          className="flex items-center gap-2 bg-white"
+                          size="sm"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                          Edit
+                        </Button>
+                      )}
+                      {canClose && (
+                        <Button
+                          onClick={() => handleCloseMom()}
+                          variant="outline"
+                          className="flex items-center gap-2 bg-red-500 text-white hover:bg-red-600"
+                          size="sm"
+                        >
+                          <Ban className="h-4 w-4" />
+                          Close MoM
+                        </Button>
+                      )}
+                      <MoMPDFDownload mom={mom} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                    <div className="flex items-center text-gray-600 bg-white/60 p-2 rounded-md">
+                      <MapPin className="mr-2 h-4 w-4 text-blue-500 flex-shrink-0" />
+                      <span className="truncate">
+                        {mom?.place || "No location specified"}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-gray-600 bg-white/60 p-2 rounded-md">
+                      <Clock className="mr-2 h-4 w-4 text-blue-500 flex-shrink-0" />
+                      <span className="truncate">
+                        {mom.completion_date
+                          ? `Completion: ${formatDate(mom.completion_date)}`
+                          : "No due date"}
+                      </span>
+                    </div>
+                    {mom?.category && mom?.type && (
+                      <div className="flex flex-col text-gray-600 bg-white/60 p-2 rounded-md">
+                        <span className="truncate">
+                          Category: {mom.category}
+                        </span>
+                        <span className="truncate">Type: {mom.type}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardHeader>
 
-            <div className="px-6 pt-4 pb-2 bg-white">
-              <div className="flex items-center justify-between">
+            <div className="px-4 sm:px-6 pt-4 pb-2 bg-white">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
                 <div>
                   <div className="text-sm">
                     Creator: {mom?.created_by?.first_name}{" "}

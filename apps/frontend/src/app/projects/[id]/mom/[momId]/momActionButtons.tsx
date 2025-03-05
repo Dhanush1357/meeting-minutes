@@ -146,7 +146,7 @@ const MoMActionButtons: React.FC<MoMActionButtonsProps> = ({
 
       {/* Rejection Dialog */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Provide Revision Comments</DialogTitle>
           </DialogHeader>

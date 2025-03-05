@@ -20,6 +20,7 @@ import {
   Pencil,
   Lock,
   ArrowUpDown,
+  Menu,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { MoMType } from "./types";
@@ -50,7 +51,8 @@ const ProjectDetailPage: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCloseOpen, setIsCloseOpen] = useState(false);
   const [closeLoading, setCloseLoading] = useState(false);
-  const [submissionLoading, setSubmissionLoading] = useState(false)
+  const [submissionLoading, setSubmissionLoading] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { currentUser } = useAuthStore();
 
   const {
@@ -69,7 +71,10 @@ const ProjectDetailPage: React.FC = () => {
   });
 
   const isMoMCreator =
-    (currentUser?.role === UserRole.SUPER_ADMIN || hasProjectRole(project?.user_roles, Number(currentUser?.id), [UserRole.CREATOR]) ) &&
+    (currentUser?.role === UserRole.SUPER_ADMIN ||
+      hasProjectRole(project?.user_roles, Number(currentUser?.id), [
+        UserRole.CREATOR,
+      ])) &&
     project?.status != ProjectStatusType.CLOSED;
 
   useEffect(() => {
@@ -132,7 +137,7 @@ const ProjectDetailPage: React.FC = () => {
 
   const handleCreateMoM = async (formData: MoMFormData) => {
     try {
-      setSubmissionLoading(true)
+      setSubmissionLoading(true);
       // Make sure reference_mom_ids is formatted correctly
       let reference_mom_ids = undefined;
       if (formData.reference_mom_ids && formData.reference_mom_ids.length > 0) {
@@ -157,7 +162,7 @@ const ProjectDetailPage: React.FC = () => {
       toast.error("Failed to create MoM");
     } finally {
       refetch();
-      setSubmissionLoading(false)
+      setSubmissionLoading(false);
     }
   };
 
@@ -232,107 +237,164 @@ const ProjectDetailPage: React.FC = () => {
   };
 
   return (
-    <div className=" bg-gray-50">
+    <div className=" bg-gray-50 min-h-screen">
       {/* Project Header */}
       <div className="bg-white border-b">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-gray-900 sm:truncate">
-                  {project?.title}
-                </h1>
+          <div className="relative">
+            {/* Mobile Menu Toggle */}
+            <div className="md:hidden absolute top-0 right-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+            </div>
+
+            {/* Mobile Actions Menu */}
+            {isMobileMenuOpen && (
+              <div className="md:hidden absolute top-12 right-0 bg-white border rounded-lg shadow-lg z-50 p-2 space-y-2">
                 {currentUser?.role === UserRole.SUPER_ADMIN &&
                   project?.status !== "CLOSED" && (
-                    <div className="space-x-2">
-                      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline">
-                            <Pencil className="mr-2 h-5 w-5" />
-                            Edit Title
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[700px]">
-                          <DialogHeader>
-                            <DialogTitle>Edit Project Title</DialogTitle>
-                          </DialogHeader>
-                          <form
-                            onSubmit={handleUpdateProject}
-                            className="space-y-6"
-                          >
-                            <div>
-                              <Label htmlFor="title">Project Title</Label>
-                              <Input
-                                id="title"
-                                name="title"
-                                defaultValue={project?.title}
-                                required
-                              />
-                            </div>
-                            <DialogFooter>
-                              <Button type="submit" disabled={loading}>
-                                {loading && (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                )}
-                                Update Project
-                              </Button>
-                            </DialogFooter>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
+                    <>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setIsEditOpen(true);
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        <Pencil className="mr-2 h-5 w-5" />
+                        Edit Title
+                      </Button>
                       {project?.status === "OPEN" && (
-                        <Dialog
-                          open={isCloseOpen}
-                          onOpenChange={setIsCloseOpen}
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => {
+                            setIsCloseOpen(true);
+                            setIsMobileMenuOpen(false);
+                          }}
                         >
-                          <DialogTrigger asChild>
-                            <Button variant="destructive">
-                              <Lock className="mr-2 h-5 w-5" />
-                              Mark as Closed
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Close Project</DialogTitle>
-                              <DialogDescription>
-                                Are you sure you want to close this project?
-                                This action cannot be undone.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                              <Button
-                                variant="destructive"
-                                onClick={handleCloseProject}
-                                disabled={closeLoading}
-                              >
-                                {closeLoading && (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                )}
-                                Close Project
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                          <Lock className="mr-2 h-5 w-5" />
+                          Mark as Closed
+                        </Button>
                       )}
-                    </div>
+                    </>
                   )}
               </div>
-              <div className="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
-                <div className="mt-2 flex items-center text-sm text-gray-500">
-                  <Users className="mr-1.5 h-4 w-4" />
-                  Created by {project?.created_by?.first_name}{" "}
-                  {project?.created_by?.last_name}
+            )}
+
+            <div className="md:flex md:items-center md:justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 sm:truncate mb-2 sm:mb-0">
+                    {project?.title}
+                  </h1>
+                  <div className="hidden md:block space-x-2">
+                    {currentUser?.role === UserRole.SUPER_ADMIN &&
+                      project?.status !== "CLOSED" && (
+                        <>
+                          <Dialog
+                            open={isEditOpen}
+                            onOpenChange={setIsEditOpen}
+                          >
+                            <DialogTrigger asChild>
+                              <Button variant="outline">
+                                <Pencil className="mr-2 h-5 w-5" />
+                                Edit Title
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Edit Project Title</DialogTitle>
+                              </DialogHeader>
+                              <form
+                                onSubmit={handleUpdateProject}
+                                className="space-y-6"
+                              >
+                                <div>
+                                  <Label htmlFor="title">Project Title</Label>
+                                  <Input
+                                    id="title"
+                                    name="title"
+                                    defaultValue={project?.title}
+                                    required
+                                  />
+                                </div>
+                                <DialogFooter>
+                                  <Button type="submit" disabled={loading}>
+                                    {loading && (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    )}
+                                    Update Project
+                                  </Button>
+                                </DialogFooter>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                          {project?.status === "OPEN" && (
+                            <Dialog
+                              open={isCloseOpen}
+                              onOpenChange={setIsCloseOpen}
+                            >
+                              <DialogTrigger asChild>
+                                <Button variant="destructive">
+                                  <Lock className="mr-2 h-5 w-5" />
+                                  Mark as Closed
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Close Project</DialogTitle>
+                                  <DialogDescription>
+                                    Are you sure you want to close this project?
+                                    This action cannot be undone.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={handleCloseProject}
+                                    disabled={closeLoading}
+                                  >
+                                    {closeLoading && (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    )}
+                                    Close Project
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          )}
+                        </>
+                      )}
+                  </div>
                 </div>
-                <div className="mt-2 flex items-center text-sm text-gray-500">
-                  <Calendar className="mr-1.5 h-4 w-4" />
-                  Created on{" "}
-                  {new Date(project?.created_at || "").toLocaleString()}
+                <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:space-x-6">
+                  <div className="mt-2 flex items-center text-xs sm:text-sm text-gray-500">
+                    <Users className="mr-1.5 h-4 w-4" />
+                    <span className="truncate">
+                      Created by {project?.created_by?.first_name}{" "}
+                      {project?.created_by?.last_name}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center text-xs sm:text-sm text-gray-500">
+                    <Calendar className="mr-1.5 h-4 w-4" />
+                    <span className="truncate">
+                      Created on{" "}
+                      {new Date(project?.created_at || "").toLocaleString()}
+                    </span>
+                  </div>
+                  <Badge
+                    className={`mt-2 text-xs sm:text-sm ${project?.status === "OPEN" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                  >
+                    {project?.status}
+                  </Badge>
                 </div>
-                <Badge
-                  className={`mt-2 ${project?.status === "OPEN" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-                >
-                  {project?.status}
-                </Badge>
               </div>
             </div>
           </div>
@@ -342,15 +404,15 @@ const ProjectDetailPage: React.FC = () => {
       {/* Tabbed Content */}
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <Tabs defaultValue="moms" className="w-full">
-          <TabsList className="mb-4">
+          <TabsList className="w-full grid grid-cols-2 mb-4">
             <TabsTrigger value="moms">Minutes of Meetings</TabsTrigger>
             <TabsTrigger value="team">Assigned Members</TabsTrigger>
           </TabsList>
 
           <TabsContent value="moms">
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-0">
                   Minutes of Meetings
                 </h2>
                 {isMoMCreator && project?.status !== "CLOSED" && (
@@ -365,7 +427,7 @@ const ProjectDetailPage: React.FC = () => {
               </div>
               {loading ? (
                 <div className="flex justify-center items-center h-64">
-                  <span className="loading loading-spinner loading-lg"></span>
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : (
                 <DataTable
@@ -386,7 +448,7 @@ const ProjectDetailPage: React.FC = () => {
 
           <TabsContent value="team">
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Assigned Members
               </h2>
               <TeamMembersSection project={project} setProject={setProject} />

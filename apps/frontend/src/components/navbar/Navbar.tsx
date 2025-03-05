@@ -223,7 +223,7 @@ const Navbar = () => {
             {isAuthenticated && (
               <div className="border-t border-gray-100 py-2">
                 <Link
-                  href="/profile"
+                  href="/users/profile"
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >

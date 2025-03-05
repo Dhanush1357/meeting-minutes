@@ -147,8 +147,8 @@ const TaskInput: React.FC<TaskInputProps> = React.memo(
     return (
       <Card className="shadow-sm border-0 bg-gray-50/50">
         <CardHeader className="pb-2">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">{label}</h3>
+          <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{label}</h3>
             <div className="flex gap-2">
               {canEdit && (
                 <>
@@ -278,7 +278,7 @@ const ImportSection: React.FC<{
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Import from Existing MoM
@@ -384,10 +384,10 @@ const CategorySelector: React.FC<{
           onClick={toggleDropdown}
           className="w-full flex items-center justify-between border border-gray-300 rounded-md px-3 py-2 bg-white"
         >
-          <span className="truncate">
+          <span className="truncate max-w-[calc(100%-30px)]">
             {selectedOption ? `${selectedCategory} - ${selectedOption}` : (selectedCategory || "Select Category")}
           </span>
-          <ChevronDown className="h-4 w-4 text-gray-500" />
+          <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
         </button>
 
         {dropdownOpen && (
@@ -735,9 +735,9 @@ const MoMForm: React.FC<MoMFormProps> = ({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[800px] h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] w-[95vw] max-w-[800px] h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-xl sm:text-2xl font-bold">
             {editMode ? "Edit MoM" : "Create New MoM"}
           </DialogTitle>
         </DialogHeader>
@@ -764,7 +764,7 @@ const MoMForm: React.FC<MoMFormProps> = ({
                     className="mt-1"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label
                       htmlFor="completion_date"
