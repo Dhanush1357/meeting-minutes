@@ -136,3 +136,13 @@ This will start all apps (backend, frontend, etc.) in development mode.
 4. Make changes to the code
 5. Run the tests and ensure everything works
 6. Create a pull request
+
+### Commit Message Convention
+
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation update
+- `style:` Code formatting
+- `refactor:` Code refactoring
+- `test:` Add or update tests
+- `chore:` Maintenance tasks

@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend Application Documentation
+
+## Project Overview
+
+This is a modern, scalable frontend application built with:
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Shadcn/UI
+- Zustand for State Management
+
+## Directory Structure
+
+### Key Directories
+
+- `src/app/`: Page components and routing
+- `src/components/`: Reusable UI components
+- `src/hooks/`: Custom React hooks
+- `src/lib/`: Utility functions and configurations
+- `src/stores/`: Global state management
+- `src/factories/`: API request factories
+- `public/`: Static assets and PWA configuration
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+- Node.js
+- npm or yarn
+- Git
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install Dependencies
 
 ```bash
-npm run dev
+npm install
 # or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+yarn install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Environment Configuration
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Copy the example environment file:
+```bash
+# update the values in local env file
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Configuration
 
-## Learn More
+### Key Configuration Files
 
-To learn more about Next.js, take a look at the following resources:
+- `next.config.ts`: Next.js configuration
+- `tailwind.config.ts`: Tailwind CSS customization
+- `tsconfig.json`: TypeScript compiler settings
+- `components.json`: Shadcn/UI component configuration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development Guidelines
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Component Development
 
-## Deploy on Vercel
+1. Use functional components with TypeScript
+2. Utilize Shadcn/UI components for consistent design
+3. Implement prop types and interfaces
+4. Keep components small and focused
+5. Use custom hooks for complex logic
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### State Management
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Use Zustand for global state
+- Create stores in `src/stores/`
+- Implement type-safe stores
+
+### API Interactions
+
+- Use the API factory in `src/factories/apiFactory.ts`
+- Implement centralized API endpoint definitions
+- Handle errors and loading states consistently
+
+### Styling
+
+- Utilize Tailwind CSS utility classes
+- Follow design system and color palette
+- Use responsive design principles
+
+### Authentication
+
+- Manage authentication state in `useAuthStore.ts`
+- Implement protected routes
+- Handle token management
+
+## Available Scripts
+
+- `npm run dev`: Start development server
+- `npm run build`: Create production build
+- `npm run start`: Start production server
+- `npm run lint`: Run ESLint
+- `npm run format`: Format code with Prettier
+
+## Performance Optimization
+
+- Implement code splitting
+- Use dynamic imports
+- Optimize images and assets
+- Leverage Next.js image optimization
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes with descriptive messages
+4. Push to your fork
+5. Create a pull request

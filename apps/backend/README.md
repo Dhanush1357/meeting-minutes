@@ -75,24 +75,42 @@ The application is organized into feature-based modules, each containing its own
 
 ## Getting Started
 
+### Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- PostgreSQL
+
 1. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Set up environment variables:
+2. Set up environment variables (change the values):
 ```bash
 cp .env.example .env
 ```
 
-3. Run database migrations:
+3. DataBase setup:
 ```bash
-npx prisma migrate dev
+# Create the database
+CREATE DATABASE mom_management;
+
+# Connect to the new database
+\c mom_management;
+
+# Create a new user (optional, but recommended)
+CREATE USER mom_admin WITH ENCRYPTED PASSWORD 'your_strong_password_here';
+
+# Grant all privileges on the database to the new user
+GRANT ALL PRIVILEGES ON DATABASE mom_management TO mom_admin;
+GRANT ALL PRIVILEGES ON SCHEMA public TO mom_admin;
+
 ```
 
-4. Start the development server:
+4. Run database migrations:
 ```bash
-npm run start:dev
+npx prisma migrate dev
 ```
 
 ## Development Guidelines
