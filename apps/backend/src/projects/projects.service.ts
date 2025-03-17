@@ -138,6 +138,7 @@ export class ProjectsService {
       data: {
         title: data.title,
         creator_id: req.user.id,
+        client_logo: data.client_logo,
         user_roles: {
           create: data.user_roles.map((user: any) => ({
             user_id: user.user_id,
@@ -212,13 +213,14 @@ export class ProjectsService {
     });
     if (!project)
       throw new NotFoundException(`Project with ID ${id} not found`);
-    const updateData: any = await this.projectsRepository.cleanObject(updateProjectDto);
+    const updateData: any =
+      await this.projectsRepository.cleanObject(updateProjectDto);
 
     // Extract user_roles separately
     const { user_roles, ...otherData } = updateData;
 
     const validData = {
-      ...pick(updateData, ['title', 'is_active', "user_roles"]),
+      ...pick(updateData, ['title', 'is_active', 'user_roles', 'client_logo']),
       updated_at: new Date(),
     };
 
@@ -246,6 +248,21 @@ export class ProjectsService {
       project.id,
       'PROJECT_UPDATED',
     );
+
+    return updatedProject;
+  }
+
+  async removeLogo(id: number, req: any) {
+    const project = await this.projectsRepository.findFirst({
+      where: { id },
+    });
+    if (!project)
+      throw new NotFoundException(`Project with ID ${id} not found`);
+
+    const updatedProject = await this.projectsRepository.update({
+      where: { id },
+      data: { client_logo: null },
+    });
 
     return updatedProject;
   }

@@ -31,6 +31,7 @@ import { UserRole } from "@/app/users/types";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { fetchAllUsers } from "@/app/users/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageUpload } from "@/components/ClientLogo";
 
 interface TeamMembersSectionProps {
   project: ProjectType | null;
@@ -69,6 +70,24 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
     [UserRole.VENDOR]: [] as string[],
     [UserRole.PARTICIPANT]: [] as string[],
   });
+  const [projectLogo, setProjectLogo] = useState<string | null>(project?.client_logo || null);
+
+  const handleLogoUpload = async (path: string) => {
+    setProjectLogo(path);
+    
+    await apiFactory(`${API_ENDPOINTS.PROJECTS.BASE}/${project?.id}`, {
+      method: "PATCH",
+      body: { client_logo: path },
+    });
+  };
+
+  const handleLogoRemove = async () => {
+    setProjectLogo(null);
+    
+    await apiFactory(`${API_ENDPOINTS.PROJECTS.BASE}/${project?.id}/remove-logo`, {
+      method: "POST",
+    });
+  };
 
   // Get unique roles for filter
   const uniqueRoles = [
@@ -259,219 +278,262 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
 
   return (
     <div className="mt-8 bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
-        <div className="flex items-center gap-2 mb-4 sm:mb-0">
+      <div className="flex flex-col sm:flex-row items-center mb-6">
+        <div className="flex items-center gap-2 mb-4 sm:mb-0 justify-start">
           <Users2 className="h-6 w-6 text-gray-500" />
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
             {project?.user_roles?.length} Members
           </h2>
         </div>
         {canEditTeam && (
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Manage Team
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Manage Team Members</DialogTitle>
-              </DialogHeader>
+          <div className="justify-end sm:ml-auto flex items-center gap-4">
+            <div>
+              <Dialog
+                open={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Manage Team
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Manage Team Members</DialogTitle>
+                  </DialogHeader>
 
-              <Tabs defaultValue="current">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="current">Current Members</TabsTrigger>
-                  <TabsTrigger value="add">Add Members</TabsTrigger>
-                </TabsList>
+                  <Tabs defaultValue="current">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="current">Current Members</TabsTrigger>
+                      <TabsTrigger value="add">Add Members</TabsTrigger>
+                    </TabsList>
 
-                <TabsContent value="current" className="space-y-4 mt-4">
-                  <h3 className="font-medium text-gray-700">
-                    Current Team Members
-                  </h3>
+                    <TabsContent value="current" className="space-y-4 mt-4">
+                      <h3 className="font-medium text-gray-700">
+                        Current Team Members
+                      </h3>
 
-                  {isLoadingUsers ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="ml-2 text-sm text-gray-500">
-                        Loading members...
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {Object.entries(currentRoles).map(([role, users]) =>
-                        users.length > 0 ? (
-                          <div key={`role-group-${role}`} className="space-y-2">
-                            <h4 className="text-sm font-medium text-gray-600">
-                              {role}
-                            </h4>
-                            <div className="space-y-2">
-                              {users.map((user) => (
-                                <div
-                                  key={`role-${role}-user-${user.user_id}`}
-                                  className="flex items-center justify-between bg-gray-50 p-2 rounded-md border"
-                                >
-                                  <div>
-                                    <p className="text-sm font-medium">
-                                      {user.name}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {user?.email}
-                                    </p>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleRemoveUser(role, user.user_id)
-                                    }
-                                    className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <X className="h-4 w-4" />
-                                    <span className="sr-only">Remove</span>
-                                  </Button>
+                      {isLoadingUsers ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="ml-2 text-sm text-gray-500">
+                            Loading members...
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {Object.entries(currentRoles).map(([role, users]) =>
+                            users.length > 0 ? (
+                              <div
+                                key={`role-group-${role}`}
+                                className="space-y-2"
+                              >
+                                <h4 className="text-sm font-medium text-gray-600">
+                                  {role}
+                                </h4>
+                                <div className="space-y-2">
+                                  {users.map((user) => (
+                                    <div
+                                      key={`role-${role}-user-${user.user_id}`}
+                                      className="flex items-center justify-between bg-gray-50 p-2 rounded-md border"
+                                    >
+                                      <div>
+                                        <p className="text-sm font-medium">
+                                          {user.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          {user?.email}
+                                        </p>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleRemoveUser(role, user.user_id)
+                                        }
+                                        className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      >
+                                        <X className="h-4 w-4" />
+                                        <span className="sr-only">Remove</span>
+                                      </Button>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
+                              </div>
+                            ) : null
+                          )}
+
+                          {Object.values(currentRoles).every(
+                            (users) => users.length === 0
+                          ) && (
+                            <p className="text-center py-4 text-gray-500">
+                              No team members assigned yet.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="add" className="space-y-4 mt-4">
+                      <h3 className="font-medium text-gray-700">
+                        Add New Members
+                      </h3>
+
+                      {isLoadingUsers ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="ml-2 text-sm text-gray-500">
+                            Loading users...
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Creator Role */}
+                          <div>
+                            <Label htmlFor={UserRole.CREATOR}>Creator</Label>
+                            <MultiSelectUsers
+                              users={getAvailableUsersForRole(UserRole.CREATOR)}
+                              selectedUsers={roleSelections[UserRole.CREATOR]}
+                              onSelect={(selectedIds) =>
+                                handleRoleSelection(
+                                  UserRole.CREATOR,
+                                  selectedIds
+                                )
+                              }
+                              placeholder="Select creators..."
+                            />
                           </div>
-                        ) : null
+
+                          {/* Reviewer Role */}
+                          <div>
+                            <Label htmlFor={UserRole.REVIEWER}>Reviewer</Label>
+                            <MultiSelectUsers
+                              users={getAvailableUsersForRole(
+                                UserRole.REVIEWER
+                              )}
+                              selectedUsers={roleSelections[UserRole.REVIEWER]}
+                              onSelect={(selectedIds) =>
+                                handleRoleSelection(
+                                  UserRole.REVIEWER,
+                                  selectedIds
+                                )
+                              }
+                              placeholder="Select reviewers..."
+                            />
+                          </div>
+
+                          {/* Approver Role */}
+                          <div>
+                            <Label htmlFor={UserRole.APPROVER}>Approver</Label>
+                            <MultiSelectUsers
+                              users={getAvailableUsersForRole(
+                                UserRole.APPROVER
+                              )}
+                              selectedUsers={roleSelections[UserRole.APPROVER]}
+                              onSelect={(selectedIds) =>
+                                handleRoleSelection(
+                                  UserRole.APPROVER,
+                                  selectedIds
+                                )
+                              }
+                              placeholder="Select approvers..."
+                            />
+                          </div>
+
+                          {/* Client Role */}
+                          <div>
+                            <Label htmlFor={UserRole.CLIENT}>Client</Label>
+                            <MultiSelectUsers
+                              users={getAvailableUsersForRole(UserRole.CLIENT)}
+                              selectedUsers={roleSelections[UserRole.CLIENT]}
+                              onSelect={(selectedIds) =>
+                                handleRoleSelection(
+                                  UserRole.CLIENT,
+                                  selectedIds
+                                )
+                              }
+                              placeholder="Select clients..."
+                            />
+                          </div>
+
+                          {/* Vendor Role */}
+                          <div>
+                            <Label htmlFor={UserRole.VENDOR}>Vendor</Label>
+                            <MultiSelectUsers
+                              users={getAvailableUsersForRole(UserRole.VENDOR)}
+                              selectedUsers={roleSelections[UserRole.VENDOR]}
+                              onSelect={(selectedIds) =>
+                                handleRoleSelection(
+                                  UserRole.VENDOR,
+                                  selectedIds
+                                )
+                              }
+                              placeholder="Select vendors..."
+                            />
+                          </div>
+
+                          {/* Participant Role */}
+                          <div>
+                            <Label htmlFor={UserRole.PARTICIPANT}>
+                              Participant
+                            </Label>
+                            <MultiSelectUsers
+                              users={getAvailableUsersForRole(
+                                UserRole.PARTICIPANT
+                              )}
+                              selectedUsers={
+                                roleSelections[UserRole.PARTICIPANT]
+                              }
+                              onSelect={(selectedIds) =>
+                                handleRoleSelection(
+                                  UserRole.PARTICIPANT,
+                                  selectedIds
+                                )
+                              }
+                              placeholder="Select participants..."
+                            />
+                          </div>
+                        </>
                       )}
+                    </TabsContent>
+                  </Tabs>
 
-                      {Object.values(currentRoles).every(
-                        (users) => users.length === 0
-                      ) && (
-                        <p className="text-center py-4 text-gray-500">
-                          No team members assigned yet.
-                        </p>
+                  <DialogFooter className="mt-6">
+                    <Button
+                      type="button"
+                      onClick={() => setIsEditDialogOpen(false)}
+                      variant="outline"
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleSaveChanges}
+                      disabled={isSubmitting}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
                       )}
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="add" className="space-y-4 mt-4">
-                  <h3 className="font-medium text-gray-700">Add New Members</h3>
-
-                  {isLoadingUsers ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="ml-2 text-sm text-gray-500">
-                        Loading users...
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Creator Role */}
-                      <div>
-                        <Label htmlFor={UserRole.CREATOR}>Creator</Label>
-                        <MultiSelectUsers
-                          users={getAvailableUsersForRole(UserRole.CREATOR)}
-                          selectedUsers={roleSelections[UserRole.CREATOR]}
-                          onSelect={(selectedIds) =>
-                            handleRoleSelection(UserRole.CREATOR, selectedIds)
-                          }
-                          placeholder="Select creators..."
-                        />
-                      </div>
-
-                      {/* Reviewer Role */}
-                      <div>
-                        <Label htmlFor={UserRole.REVIEWER}>Reviewer</Label>
-                        <MultiSelectUsers
-                          users={getAvailableUsersForRole(UserRole.REVIEWER)}
-                          selectedUsers={roleSelections[UserRole.REVIEWER]}
-                          onSelect={(selectedIds) =>
-                            handleRoleSelection(UserRole.REVIEWER, selectedIds)
-                          }
-                          placeholder="Select reviewers..."
-                        />
-                      </div>
-
-                      {/* Approver Role */}
-                      <div>
-                        <Label htmlFor={UserRole.APPROVER}>Approver</Label>
-                        <MultiSelectUsers
-                          users={getAvailableUsersForRole(UserRole.APPROVER)}
-                          selectedUsers={roleSelections[UserRole.APPROVER]}
-                          onSelect={(selectedIds) =>
-                            handleRoleSelection(UserRole.APPROVER, selectedIds)
-                          }
-                          placeholder="Select approvers..."
-                        />
-                      </div>
-
-                      {/* Client Role */}
-                      <div>
-                        <Label htmlFor={UserRole.CLIENT}>Client</Label>
-                        <MultiSelectUsers
-                          users={getAvailableUsersForRole(UserRole.CLIENT)}
-                          selectedUsers={roleSelections[UserRole.CLIENT]}
-                          onSelect={(selectedIds) =>
-                            handleRoleSelection(UserRole.CLIENT, selectedIds)
-                          }
-                          placeholder="Select clients..."
-                        />
-                      </div>
-
-                      {/* Vendor Role */}
-                      <div>
-                        <Label htmlFor={UserRole.VENDOR}>Vendor</Label>
-                        <MultiSelectUsers
-                          users={getAvailableUsersForRole(UserRole.VENDOR)}
-                          selectedUsers={roleSelections[UserRole.VENDOR]}
-                          onSelect={(selectedIds) =>
-                            handleRoleSelection(UserRole.VENDOR, selectedIds)
-                          }
-                          placeholder="Select vendors..."
-                        />
-                      </div>
-
-                      {/* Participant Role */}
-                      <div>
-                        <Label htmlFor={UserRole.PARTICIPANT}>
-                          Participant
-                        </Label>
-                        <MultiSelectUsers
-                          users={getAvailableUsersForRole(UserRole.PARTICIPANT)}
-                          selectedUsers={roleSelections[UserRole.PARTICIPANT]}
-                          onSelect={(selectedIds) =>
-                            handleRoleSelection(
-                              UserRole.PARTICIPANT,
-                              selectedIds
-                            )
-                          }
-                          placeholder="Select participants..."
-                        />
-                      </div>
-                    </>
-                  )}
-                </TabsContent>
-              </Tabs>
-
-              <DialogFooter className="mt-6">
-                <Button
-                  type="button"
-                  onClick={() => setIsEditDialogOpen(false)}
-                  variant="outline"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSaveChanges}
-                  disabled={isSubmitting}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Save Changes
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                      Save Changes
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div>
+              <Label>Client Logo</Label>
+              <ImageUpload
+                initialImage={projectLogo}
+                onUploadSuccess={handleLogoUpload}
+                handleLogoRemove={handleLogoRemove}
+              />
+            </div>
+          </div>
         )}
       </div>
 
@@ -536,7 +598,7 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </div>               
+          </div>
 
           {/* Role Filter */}
           <select

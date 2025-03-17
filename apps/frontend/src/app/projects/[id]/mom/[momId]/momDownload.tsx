@@ -10,6 +10,9 @@ type MoMPDFDownloadProps = {
 
 const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const clientLogoUrl = mom.project.client_logo
+    ? `${process.env.NEXT_PUBLIC_SERVER_URL}${mom.project.client_logo}`
+    : "/logo/activus-logo.svg";
 
   const generatePDF = () => {
     setIsGenerating(true);
@@ -70,6 +73,10 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
             justify-content: space-between;
             align-items: flex-start;
           }
+
+          .mom-title-container {
+            width: 50%;
+          }
           
           .meeting-title {
             font-family: 'Roboto', sans-serif;
@@ -118,13 +125,16 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
           }
 
           .logo-image {
-            width: 80px;
-            height: 80px;
+            max-width: 200px;
+            max-height: 100px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
           }
           
           .company-logo {
             position: absolute;
-            margin-top: 95px;
+            margin-top: 40px;
             right: 0;
             max-width: 100%;
             text-align: right;
@@ -250,18 +260,23 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                   <h2 class="minutes-title">MINUTES</h2>
                 </div>
                 <div class="logo-container">
-                  <img src="/logo/activus-logo.svg" alt="Logo" class="logo-image">
+                  <img src="${clientLogoUrl}"  alt="Logo" class="logo-image">
                 </div>
               </div>
-              
+              <div class="title-container">
+              <div class="mom-title-container">
+              ${mom?.title ? `<h3 class="mom-title">${mom.title}${mom?.mom_number ? ` - ${mom.mom_number}` : ""}</h3>` : ""}
+              ${
+                mom?.created_by?.first_name && mom?.created_by?.last_name
+                  ? `<p class="circulated-by">Circulated by: ${mom.created_by.first_name} ${mom.created_by.last_name}</p>`
+                  : ""
+              }
+              ${mom?.status ? `<p class="status">Status Of MoM: ${mom.status}</p>` : ""}
+              </div>
               <div class="company-logo">
                 <img src="/logo/activus-full.svg" alt="Company Logo" class="company-logo-image">
               </div>
-              
-              ${mom?.title ? `<h3 class="mom-title">${mom.title}${mom?.mom_number ? ` - ${mom.mom_number}` : ""}</h3>` : ''}
-              ${mom?.created_by?.first_name && mom?.created_by?.last_name ? 
-                `<p class="circulated-by">Circulated by: ${mom.created_by.first_name} ${mom.created_by.last_name}</p>` : ''}
-              ${mom?.status ? `<p class="status">Status Of MoM: ${mom.status}</p>` : ''}
+              </div>
             </div>
             
             <div class="info-grid">
@@ -278,12 +293,22 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
               <div class="info-box">
                 <div class="info-label">Facilitator:</div>
                 <div class="info-value">
-                  ${mom?.project?.user_roles && Array.isArray(mom.project.user_roles) && mom.project.user_roles.length > 0 
-                    ? mom.project.user_roles
-                        .filter(role => role?.user?.first_name && role?.user?.last_name)
-                        .map(role => `${role.user.first_name} ${role.user.last_name}`)
-                        .join(", ")
-                    : "N/A"}
+                  ${
+                    mom?.project?.user_roles &&
+                    Array.isArray(mom.project.user_roles) &&
+                    mom.project.user_roles.length > 0
+                      ? mom.project.user_roles
+                          .filter(
+                            (role) =>
+                              role?.user?.first_name && role?.user?.last_name
+                          )
+                          .map(
+                            (role) =>
+                              `${role.user.first_name} ${role.user.last_name}`
+                          )
+                          .join(", ")
+                      : "N/A"
+                  }
                 </div>
               </div>
               
@@ -298,10 +323,13 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                 <div class="section-header">Discussion:</div>
                 <div class="section-content">
                   <div class="bullet-list">
-                    ${mom?.discussion && Array.isArray(mom.discussion) && mom.discussion.length > 0
-                      ? mom.discussion
-                          .map(
-                            (item, index) => `
+                    ${
+                      mom?.discussion &&
+                      Array.isArray(mom.discussion) &&
+                      mom.discussion.length > 0
+                        ? mom.discussion
+                            .map(
+                              (item, index) => `
                           <div class="bullet-item">
                             <span class="number">${index + 1}.</span>
                             <span class="text" style="${
@@ -311,9 +339,10 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                             }">${item.text || ""}</span>
                           </div>
                         `
-                          )
-                          .join("")
-                      : "<div>No discussions recorded</div>"}
+                            )
+                            .join("")
+                        : "<div>No discussions recorded</div>"
+                    }
                   </div>
                 </div>
               </div>
@@ -322,10 +351,13 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                 <div class="section-header">Open Issue:</div>
                 <div class="section-content">
                   <div class="bullet-list">
-                    ${mom?.open_issues && Array.isArray(mom.open_issues) && mom.open_issues.length > 0
-                      ? mom.open_issues
-                          .map(
-                            (item, index) => `
+                    ${
+                      mom?.open_issues &&
+                      Array.isArray(mom.open_issues) &&
+                      mom.open_issues.length > 0
+                        ? mom.open_issues
+                            .map(
+                              (item, index) => `
                           <div class="bullet-item">
                             <span class="number">${index + 1}.</span>
                             <span class="text" style="${
@@ -335,9 +367,10 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                             }">${item.text || ""}</span>
                           </div>
                         `
-                          )
-                          .join("")
-                      : "<div>No open issues recorded</div>"}
+                            )
+                            .join("")
+                        : "<div>No open issues recorded</div>"
+                    }
                   </div>
                 </div>
               </div>
@@ -346,10 +379,13 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                 <div class="section-header">Updates:</div>
                 <div class="section-content">
                   <div class="bullet-list">
-                    ${mom?.updates && Array.isArray(mom.updates) && mom.updates.length > 0
-                      ? mom.updates
-                          .map(
-                            (item, index) => `
+                    ${
+                      mom?.updates &&
+                      Array.isArray(mom.updates) &&
+                      mom.updates.length > 0
+                        ? mom.updates
+                            .map(
+                              (item, index) => `
                           <div class="bullet-item">
                             <span class="number">${index + 1}.</span>
                             <span class="text" style="${
@@ -359,9 +395,10 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                             }">${item.text || ""}</span>
                           </div>
                         `
-                          )
-                          .join("")
-                      : "<div>No updates recorded</div>"}
+                            )
+                            .join("")
+                        : "<div>No updates recorded</div>"
+                    }
                   </div>
                 </div>
               </div>
@@ -370,10 +407,13 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                 <div class="section-header">Notes:</div>
                 <div class="section-content">
                   <div class="bullet-list">
-                    ${mom?.notes && Array.isArray(mom.notes) && mom.notes.length > 0
-                      ? mom.notes
-                          .map(
-                            (item, index) => `
+                    ${
+                      mom?.notes &&
+                      Array.isArray(mom.notes) &&
+                      mom.notes.length > 0
+                        ? mom.notes
+                            .map(
+                              (item, index) => `
                           <div class="bullet-item">
                             <span class="number">${index + 1}.</span>
                             <span class="text" style="${
@@ -383,9 +423,10 @@ const MoMPDFDownload: React.FC<MoMPDFDownloadProps> = ({ mom }) => {
                             }">${item.text || ""}</span>
                           </div>
                         `
-                          )
-                          .join("")
-                      : "<div>No notes recorded</div>"}
+                            )
+                            .join("")
+                        : "<div>No notes recorded</div>"
+                    }
                   </div>
                 </div>
               </div>

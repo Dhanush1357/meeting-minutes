@@ -118,6 +118,7 @@ export class MomService {
       include: {
         project: {
           select: {
+            client_logo: true,
             user_roles: {
               select: {
                 role: true,

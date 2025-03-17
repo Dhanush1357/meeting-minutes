@@ -52,6 +52,7 @@ const ProjectDetailPage: React.FC = () => {
   const [isCloseOpen, setIsCloseOpen] = useState(false);
   const [closeLoading, setCloseLoading] = useState(false);
   const [submissionLoading, setSubmissionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("moms");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { currentUser } = useAuthStore();
 
@@ -78,6 +79,7 @@ const ProjectDetailPage: React.FC = () => {
     project?.status != ProjectStatusType.CLOSED;
 
   useEffect(() => {
+    const tabToOpen = localStorage.getItem("projectTabToOpen");
     const loadProjects = async () => {
       try {
         const projectData = await apiFactory(
@@ -92,6 +94,11 @@ const ProjectDetailPage: React.FC = () => {
       }
     };
     loadProjects();
+    if (tabToOpen) {
+      setActiveTab(tabToOpen);
+      // Clear the flag after using it
+      localStorage.removeItem("projectTabToOpen");
+    }
   }, [params.id]);
 
   const handleUpdateProject = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -403,7 +410,7 @@ const ProjectDetailPage: React.FC = () => {
 
       {/* Tabbed Content */}
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-        <Tabs defaultValue="moms" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-2 mb-4">
             <TabsTrigger value="moms">Minutes of Meetings</TabsTrigger>
             <TabsTrigger value="team">Assigned Members</TabsTrigger>

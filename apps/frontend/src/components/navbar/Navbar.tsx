@@ -76,7 +76,7 @@ const Navbar = () => {
                 priority
                 src={companyLogo}
                 alt="Activus Logo"
-                className="w-28 h-auto sm:w-32 md:w-40 transition-all duration-300"
+                className="w-48 h-auto sm:w-52 md:w-56 transition-all duration-300"
               />
             </div>
 

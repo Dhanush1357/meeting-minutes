@@ -31,6 +31,7 @@ import { DataTable } from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import ProfileCompletionModal from "../users/ProfileCompletionModal";
 import { usePagination } from "@/hooks/usePagination";
+import { ImageUpload } from "@/components/ClientLogo";
 
 type UserRoleKeys = Exclude<UserRole, UserRole.SUPER_ADMIN>;
 
@@ -51,6 +52,7 @@ const ProjectsPage: React.FC = () => {
   const [users, setUsers] = useState<CurrentUserType[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [logoPath, setLogoPath] = useState("");
   const [isLoadingCreation, setIsLoadingCreation] = useState(false);
   const { currentUser } = useAuthStore();
   const router = useRouter();
@@ -64,6 +66,15 @@ const ProjectsPage: React.FC = () => {
     [UserRole.VENDOR]: [] as string[],
     [UserRole.PARTICIPANT]: [] as string[],
   });
+  const [projectLogo, setProjectLogo] = useState<string | null>(null);
+  
+  const handleLogoUpload = (path: string) => {
+    setProjectLogo(path);
+  };
+
+  const handleLogoRemove = () => {
+    setProjectLogo(null);
+  };
 
   // Get available users for a specific role
   const getAvailableUsersForRole = (role: UserRole) => {
@@ -164,6 +175,7 @@ const ProjectsPage: React.FC = () => {
 
       const projectData = {
         title: formData.get("title"),
+        client_logo: projectLogo,
         user_roles: userRoles,
       };
 
@@ -281,16 +293,12 @@ const ProjectsPage: React.FC = () => {
                           <>
                             {/* Creator Role */}
                             <div>
-                              <Label htmlFor={UserRole.CREATOR}>
-                                Creator
-                              </Label>
+                              <Label htmlFor={UserRole.CREATOR}>Creator</Label>
                               <MultiSelectUsers
                                 users={getAvailableUsersForRole(
                                   UserRole.CREATOR
                                 )}
-                                selectedUsers={
-                                  roleSelections[UserRole.CREATOR]
-                                }
+                                selectedUsers={roleSelections[UserRole.CREATOR]}
                                 onSelect={(selectedIds) =>
                                   handleRoleSelection(
                                     UserRole.CREATOR,
@@ -346,39 +354,44 @@ const ProjectsPage: React.FC = () => {
                             </div>
 
                             {/* Client Role */}
-                            <div>
-                              <Label htmlFor={UserRole.CLIENT}>
-                                Client
-                              </Label>
-                              <MultiSelectUsers
-                                users={getAvailableUsersForRole(
-                                  UserRole.CLIENT
-                                )}
-                                selectedUsers={
-                                  roleSelections[UserRole.CLIENT]
-                                }
-                                onSelect={(selectedIds) =>
-                                  handleRoleSelection(
-                                    UserRole.CLIENT,
-                                    selectedIds
-                                  )
-                                }
-                                placeholder="Select clients..."
-                              />
+                            <div className="flex flex-row">
+                              <div className="w-5/6 pr-6">
+                                <Label htmlFor={UserRole.CLIENT}>Client</Label>
+                                <MultiSelectUsers
+                                  users={getAvailableUsersForRole(
+                                    UserRole.CLIENT
+                                  )}
+                                  selectedUsers={
+                                    roleSelections[UserRole.CLIENT]
+                                  }
+                                  onSelect={(selectedIds) =>
+                                    handleRoleSelection(
+                                      UserRole.CLIENT,
+                                      selectedIds
+                                    )
+                                  }
+                                  placeholder="Select clients..."
+                                />
+                              </div>
+
+                              <div>
+                                <Label>Client Logo</Label>
+                                <ImageUpload
+                                 initialImage={projectLogo} 
+                                 onUploadSuccess={handleLogoUpload} 
+                                 handleLogoRemove={handleLogoRemove}
+                                />
+                              </div>
                             </div>
 
                             {/* Vendor Role */}
                             <div>
-                              <Label htmlFor={UserRole.VENDOR}>
-                                Vendor
-                              </Label>
+                              <Label htmlFor={UserRole.VENDOR}>Vendor</Label>
                               <MultiSelectUsers
                                 users={getAvailableUsersForRole(
                                   UserRole.VENDOR
                                 )}
-                                selectedUsers={
-                                  roleSelections[UserRole.VENDOR]
-                                }
+                                selectedUsers={roleSelections[UserRole.VENDOR]}
                                 onSelect={(selectedIds) =>
                                   handleRoleSelection(
                                     UserRole.VENDOR,
