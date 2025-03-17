@@ -44,12 +44,12 @@ export default function RootLayout({
         <Navbar />
         <div className="flex-1 flex flex-col pt-16">
           <header className="bg-white border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="w-full px-3 sm:px-2 lg:px-8 py-4">
               <Breadcrumbs />
             </div>
           </header>
           <main className="flex-1 bg-gradient-to-b from-white to-gray-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="w-full">
               <RootLayoutClient>{children}</RootLayoutClient>
             </div>
           </main>

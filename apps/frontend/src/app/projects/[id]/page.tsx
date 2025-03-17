@@ -247,7 +247,7 @@ const ProjectDetailPage: React.FC = () => {
     <div className=" bg-gray-50 min-h-screen">
       {/* Project Header */}
       <div className="bg-white border-b">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[85rem] px-4 py-8 sm:px-6 lg:px-8">
           <div className="relative">
             {/* Mobile Menu Toggle */}
             <div className="md:hidden absolute top-0 right-0">
@@ -409,7 +409,7 @@ const ProjectDetailPage: React.FC = () => {
       </div>
 
       {/* Tabbed Content */}
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[85rem]  px-4 py-4 sm:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-2 mb-4">
             <TabsTrigger value="moms">Minutes of Meetings</TabsTrigger>

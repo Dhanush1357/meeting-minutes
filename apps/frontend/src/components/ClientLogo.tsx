@@ -296,7 +296,7 @@ export function ImageUpload({
                 {previewImage ? (
                   <div className="relative">
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_SERVER_URL}${previewImage}`}
+                      src={previewImage}
                       alt="Image preview"
                       width={100}
                       height={50}
