@@ -118,6 +118,7 @@ export class MomService {
       include: {
         project: {
           select: {
+            client_logo: true,
             user_roles: {
               select: {
                 role: true,
@@ -258,16 +259,48 @@ export class MomService {
 
     // If creator is SUPER_ADMIN, generate PDF and send email
     if (req.user.role === UserRole.SUPER_ADMIN && cleanedData?.user_emails) {
+      const mom = await this.MomRepository.findFirst({
+        where: { id: createdMom.id },
+        include: {
+          project: {
+            select: {
+              client_logo: true,
+              user_roles: {
+                select: {
+                  role: true,
+                  user_id: true,
+                  user: { select: { first_name: true, last_name: true } },
+                },
+              },
+            },
+          },
+          created_by: {
+            select: {
+              id: true,
+              created_at: true,
+              updated_at: true,
+              is_active: true,
+              email: true,
+              password: false,
+              first_name: true,
+              last_name: true,
+              role: true,
+              profile_complete: true,
+            },
+          },
+        },
+      });
+
       // Generate PDF
       const pdfBuffer =
-        await this.pdfGenerationService.generateMoMPdf(createdMom);
+        await this.pdfGenerationService.generateMoMPdf(mom);
 
       // Send email with PDF attachment
       await this.mailService.sendMoMCreatedEmail(
         createdMom,
         [
           {
-            filename: `MOM_${momNumber}_${new Date().getFullYear()}-${new Date().getFullYear() + 1}.pdf`,
+            filename: `MOM_${momNumber || 'New'}_${new Date().getFullYear()}-${new Date().getFullYear() + 1}.pdf`,
             content: pdfBuffer,
           },
         ],

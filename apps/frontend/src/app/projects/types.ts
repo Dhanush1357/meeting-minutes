@@ -13,6 +13,7 @@ export interface ProjectType {
   creator_id: number;
   created_by: CurrentUserType;
   title: string;
+  client_logo: string;
   status: ProjectStatusType;
   user_roles: CategoriesOnProjects[];
 }

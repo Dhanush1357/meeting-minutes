@@ -408,6 +408,7 @@ const MoMDetailPage: React.FC = () => {
                   userRole={mom.project.user_roles}
                   currentUser={currentUser}
                   onStatusUpdate={() => loadMoM()}
+                  projectId={mom?.project_id}
                 />
               </div>
             </div>

@@ -8,6 +8,7 @@ model Project {
   status ProjectStatus @default(OPEN)
 
   title  String
+  client_logo String?
   user_roles   CategoriesOnProjects[]
   updated_at DateTime?
 

@@ -15,18 +15,22 @@ const apiFactory = async <T>(
     // Get token from localStorage
     const token = useAuthStore.getState().token;
 
+    const isFormData = options.body instanceof FormData;
+
     // Prepare headers
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     };
 
     // Prepare request options
-    const requestOptions: RequestInit = {
+    const requestOptions: any = {
       method: options.method,
       headers,
-      ...(options.body && { body: JSON.stringify(options.body) }),
+      ...(options.body && {
+        body: isFormData ? options.body : JSON.stringify(options.body),
+      }),
     };
 
     const response = await fetch(`${API_ENDPOINTS.API_BASE_URL}${endpoint}`, requestOptions);

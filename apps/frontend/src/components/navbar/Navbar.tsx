@@ -68,7 +68,7 @@ const Navbar = () => {
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 
       ${isScrolled ? "bg-[#127285] shadow-md" : "bg-[#127285]"}`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex-shrink-0">
@@ -76,12 +76,12 @@ const Navbar = () => {
                 priority
                 src={companyLogo}
                 alt="Activus Logo"
-                className="w-28 h-auto sm:w-32 md:w-40 transition-all duration-300"
+                className="w-48 h-auto sm:w-52 md:w-56 transition-all duration-300"
               />
             </div>
 
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center space-x-1">
+            {/* Desktop Menu - Modified to align everything to the right with no gap */}
+            <div className="hidden md:flex items-center justify-end space-x-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
@@ -103,7 +103,7 @@ const Navbar = () => {
 
               {/* Profile Dropdown - Only show if authenticated */}
               {isAuthenticated && (
-                <div className="flex items-center space-x-2 ml-4">
+                <div className="flex items-center space-x-2">
                   <Notifications />
                   <div className="relative profile-menu">
                     <button

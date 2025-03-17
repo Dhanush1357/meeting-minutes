@@ -146,3 +146,8 @@ This will start all apps (backend, frontend, etc.) in development mode.
 - `refactor:` Code refactoring
 - `test:` Add or update tests
 - `chore:` Maintenance tasks
+
+### TODO
+
+- Debug web notifications for MoM and project-related updates.
+- Add tracking for changes across all models to maintain an audit trail.

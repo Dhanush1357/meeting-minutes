@@ -31,6 +31,7 @@ import { DataTable } from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import ProfileCompletionModal from "../users/ProfileCompletionModal";
 import { usePagination } from "@/hooks/usePagination";
+import { ImageUpload } from "@/components/ClientLogo";
 
 type UserRoleKeys = Exclude<UserRole, UserRole.SUPER_ADMIN>;
 
@@ -51,6 +52,7 @@ const ProjectsPage: React.FC = () => {
   const [users, setUsers] = useState<CurrentUserType[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [logoPath, setLogoPath] = useState("");
   const [isLoadingCreation, setIsLoadingCreation] = useState(false);
   const { currentUser } = useAuthStore();
   const router = useRouter();
@@ -64,6 +66,15 @@ const ProjectsPage: React.FC = () => {
     [UserRole.VENDOR]: [] as string[],
     [UserRole.PARTICIPANT]: [] as string[],
   });
+  const [projectLogo, setProjectLogo] = useState<string | null>(null);
+  
+  const handleLogoUpload = (path: string) => {
+    setProjectLogo(path);
+  };
+
+  const handleLogoRemove = () => {
+    setProjectLogo(null);
+  };
 
   // Get available users for a specific role
   const getAvailableUsersForRole = (role: UserRole) => {
@@ -164,6 +175,7 @@ const ProjectsPage: React.FC = () => {
 
       const projectData = {
         title: formData.get("title"),
+        client_logo: projectLogo,
         user_roles: userRoles,
       };
 
@@ -227,197 +239,157 @@ const ProjectsPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-gradient-to-b from-white to-gray-50">
-      <div className="mx-auto max-w-7xl px-1 py-8 sm:px-3 lg:px-8">
-        <div className="relative mb-8 rounded-2xl bg-white px-6 py-3 shadow-sm ring-1 ring-gray-100">
+    <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen">
+      <div className="mx-auto max-w-[85rem] px-4 pt-8 sm:px-6 lg:px-8">
+        {/* Header Section with improved styling */}
+        <div className="relative mb-10 overflow-hidden rounded-2xl bg-white p-8 shadow-lg ring-1 ring-gray-200">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
                 Projects
               </h1>
+              <p className="text-gray-500">
+                Manage and organize all your team's projects
+              </p>
             </div>
-
+  
             {currentUser?.role === UserRole.SUPER_ADMIN && (
               <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
                   <Button
-                    className="group relative overflow-hidden bg-primary transition-all hover:bg-primary/90"
+                    className="group text-white hover:text-black relative overflow-hidden bg-[#127285] transition-all duration-300 hover:shadow-md"
                     size="lg"
                   >
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Create Project
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#DEEEF2] to-[#5ec8e2] opacity-0 transition-opacity group-hover:opacity-100" />
+                    <span className="relative flex items-center">
+                      <PlusCircle className="mr-2 h-5 w-5" />
+                      Create Project
+                    </span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Create New Project</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold">Create New Project</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={handleAddProject} className="space-y-6">
-                    <div className="space-y-4">
+                  <form onSubmit={handleAddProject} className="space-y-2">
+                    <div className="space-y-2">
                       <div>
-                        <Label htmlFor="title">Project Title</Label>
+                        <Label htmlFor="title" className="text-base font-medium">Project Title</Label>
                         <Input
                           id="title"
                           name="title"
                           placeholder="Enter project title"
-                          className="w-full rounded-lg border-gray-200"
+                          className="mt-1 w-full rounded-lg border-gray-200 text-lg"
                           required
                         />
                       </div>
-                      {/* User Role Selection Dropdowns */}
-                      <div className="space-y-4">
-                        <h3 className="font-medium text-gray-700">
+                      
+                      {/* User Role Selection */}
+                      <div className="space-y-2 rounded-lg bg-gray-50 pt-2">
+                        <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-3">
                           Assign Users to Roles
                         </h3>
-
+  
                         {isLoadingUsers ? (
-                          <div className="flex items-center justify-center p-4">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                            <span className="ml-2 text-sm text-gray-500">
+                          <div className="flex items-center justify-center p-6 rounded-lg bg-white">
+                            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                            <span className="ml-3 text-gray-600">
                               Loading users...
                             </span>
                           </div>
                         ) : (
-                          <>
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                             {/* Creator Role */}
-                            <div>
-                              <Label htmlFor={UserRole.CREATOR}>
-                                Creator
-                              </Label>
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <Label htmlFor={UserRole.CREATOR} className="text-sm font-medium text-gray-700">Creator</Label>
                               <MultiSelectUsers
-                                users={getAvailableUsersForRole(
-                                  UserRole.CREATOR
-                                )}
-                                selectedUsers={
-                                  roleSelections[UserRole.CREATOR]
-                                }
-                                onSelect={(selectedIds) =>
-                                  handleRoleSelection(
-                                    UserRole.CREATOR,
-                                    selectedIds
-                                  )
-                                }
+                                users={getAvailableUsersForRole(UserRole.CREATOR)}
+                                selectedUsers={roleSelections[UserRole.CREATOR]}
+                                onSelect={(selectedIds) => handleRoleSelection(UserRole.CREATOR, selectedIds)}
                                 placeholder="Select creators..."
                               />
                             </div>
-
+  
                             {/* Reviewer Role */}
-                            <div>
-                              <Label htmlFor={UserRole.REVIEWER}>
-                                Reviewer
-                              </Label>
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <Label htmlFor={UserRole.REVIEWER} className="text-sm font-medium text-gray-700">Reviewer</Label>
                               <MultiSelectUsers
-                                users={getAvailableUsersForRole(
-                                  UserRole.REVIEWER
-                                )}
-                                selectedUsers={
-                                  roleSelections[UserRole.REVIEWER]
-                                }
-                                onSelect={(selectedIds) =>
-                                  handleRoleSelection(
-                                    UserRole.REVIEWER,
-                                    selectedIds
-                                  )
-                                }
+                                users={getAvailableUsersForRole(UserRole.REVIEWER)}
+                                selectedUsers={roleSelections[UserRole.REVIEWER]}
+                                onSelect={(selectedIds) => handleRoleSelection(UserRole.REVIEWER, selectedIds)}
                                 placeholder="Select reviewers..."
                               />
                             </div>
-
+  
                             {/* Approver Role */}
-                            <div>
-                              <Label htmlFor={UserRole.APPROVER}>
-                                Approver
-                              </Label>
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <Label htmlFor={UserRole.APPROVER} className="text-sm font-medium text-gray-700">Approver</Label>
                               <MultiSelectUsers
-                                users={getAvailableUsersForRole(
-                                  UserRole.APPROVER
-                                )}
-                                selectedUsers={
-                                  roleSelections[UserRole.APPROVER]
-                                }
-                                onSelect={(selectedIds) =>
-                                  handleRoleSelection(
-                                    UserRole.APPROVER,
-                                    selectedIds
-                                  )
-                                }
+                                users={getAvailableUsersForRole(UserRole.APPROVER)}
+                                selectedUsers={roleSelections[UserRole.APPROVER]}
+                                onSelect={(selectedIds) => handleRoleSelection(UserRole.APPROVER, selectedIds)}
                                 placeholder="Select approvers..."
                               />
                             </div>
-
-                            {/* Client Role */}
-                            <div>
-                              <Label htmlFor={UserRole.CLIENT}>
-                                Client
-                              </Label>
-                              <MultiSelectUsers
-                                users={getAvailableUsersForRole(
-                                  UserRole.CLIENT
-                                )}
-                                selectedUsers={
-                                  roleSelections[UserRole.CLIENT]
-                                }
-                                onSelect={(selectedIds) =>
-                                  handleRoleSelection(
-                                    UserRole.CLIENT,
-                                    selectedIds
-                                  )
-                                }
-                                placeholder="Select clients..."
-                              />
-                            </div>
-
+  
                             {/* Vendor Role */}
-                            <div>
-                              <Label htmlFor={UserRole.VENDOR}>
-                                Vendor
-                              </Label>
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <Label htmlFor={UserRole.VENDOR} className="text-sm font-medium text-gray-700">Vendor</Label>
                               <MultiSelectUsers
-                                users={getAvailableUsersForRole(
-                                  UserRole.VENDOR
-                                )}
-                                selectedUsers={
-                                  roleSelections[UserRole.VENDOR]
-                                }
-                                onSelect={(selectedIds) =>
-                                  handleRoleSelection(
-                                    UserRole.VENDOR,
-                                    selectedIds
-                                  )
-                                }
+                                users={getAvailableUsersForRole(UserRole.VENDOR)}
+                                selectedUsers={roleSelections[UserRole.VENDOR]}
+                                onSelect={(selectedIds) => handleRoleSelection(UserRole.VENDOR, selectedIds)}
                                 placeholder="Select vendors..."
                               />
                             </div>
-
+  
                             {/* Participant Role */}
-                            <div>
-                              <Label htmlFor={UserRole.PARTICIPANT}>
-                                Participant
-                              </Label>
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <Label htmlFor={UserRole.PARTICIPANT} className="text-sm font-medium text-gray-700">Participant</Label>
                               <MultiSelectUsers
-                                users={getAvailableUsersForRole(
-                                  UserRole.PARTICIPANT
-                                )}
-                                selectedUsers={
-                                  roleSelections[UserRole.PARTICIPANT]
-                                }
-                                onSelect={(selectedIds) =>
-                                  handleRoleSelection(
-                                    UserRole.PARTICIPANT,
-                                    selectedIds
-                                  )
-                                }
+                                users={getAvailableUsersForRole(UserRole.PARTICIPANT)}
+                                selectedUsers={roleSelections[UserRole.PARTICIPANT]}
+                                onSelect={(selectedIds) => handleRoleSelection(UserRole.PARTICIPANT, selectedIds)}
                                 placeholder="Select participants..."
                               />
                             </div>
-                          </>
+  
+                            {/* Client Role + Logo Upload */}
+                            <div className="rounded-lg bg-white p-4 shadow-sm col-span-full">
+                              <div className="flex flex-col md:flex-row items-start">
+                                <div className="flex-grow mr-6 w-full md:w-3/4">
+                                  <Label htmlFor={UserRole.CLIENT} className="text-sm font-medium text-gray-700">Client</Label>
+                                  <MultiSelectUsers
+                                    users={getAvailableUsersForRole(UserRole.CLIENT)}
+                                    selectedUsers={roleSelections[UserRole.CLIENT]}
+                                    onSelect={(selectedIds) => handleRoleSelection(UserRole.CLIENT, selectedIds)}
+                                    placeholder="Select clients..."
+                                  />
+                                </div>
+                                <div className="mt-4 md:mt-0 w-full md:w-1/4">
+                                  <Label className="text-sm font-medium text-gray-700 block mb-2">Client Logo</Label>
+                                  <div className="rounded-lg border-2 border-dashed border-gray-300 p-2 transition-colors hover:border-gray-400">
+                                    <ImageUpload
+                                      initialImage={projectLogo}
+                                      onUploadSuccess={handleLogoUpload}
+                                      handleLogoRemove={handleLogoRemove}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button type="submit" disabled={isLoadingCreation}>
+                      <Button 
+                        type="submit" 
+                        disabled={isLoadingCreation} 
+                        className="w-full text-white hover:text-black sm:w-auto py-2 px-4 bg-[#127285] hover:bg-[#12728586]"
+                      >
                         {(isLoadingCreation || isLoadingUsers) && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         )}
                         Create Project
                       </Button>
@@ -428,25 +400,32 @@ const ProjectsPage: React.FC = () => {
             )}
           </div>
         </div>
-
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <span className="loading loading-spinner loading-lg"></span>
-          </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={projects as ProjectType[]}
-            searchKey="title"
-            searchPlaceholder="Search projects..."
-            onRowClick={handleRowClick}
-            pagination={{
-              pageCount,
-              currentPage,
-              onPageChange: goToPage,
-            }}
-          />
-        )}
+  
+        {/* Projects Table with improved loading state */}
+        <div className="rounded-xl bg-white shadow-lg overflow-hidden">
+          {loading ? (
+            <div className="flex flex-col justify-center items-center h-64 bg-gray-50">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-600 mb-2" />
+              <p className="text-gray-500">Loading projects...</p>
+            </div>
+          ) : (
+            <div className="overflow-hidden">
+              <DataTable
+                columns={columns}
+                data={projects as ProjectType[]}
+                searchKey="title"
+                searchPlaceholder="Search projects..."
+                onRowClick={handleRowClick}
+                pagination={{
+                  pageCount,
+                  currentPage,
+                  onPageChange: goToPage,
+                }}
+              />
+            </div>
+          )}
+        </div>
+        
         {/* Profile completion modal */}
         {currentUser && !currentUser.profile_complete && (
           <ProfileCompletionModal />

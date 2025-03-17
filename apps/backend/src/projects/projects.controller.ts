@@ -43,4 +43,9 @@ export class ProjectsController {
   async closeProject(@Param('id', ParseIntPipe) id: number, @Req() req) {
     return this.ProjectsService.closeProject(id, req);
   }
+
+  @Post(':id/remove-logo')
+  async removeLogo(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.ProjectsService.removeLogo(id, req);
+  }
 }

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   PlusCircle,
   Loader2,
@@ -148,7 +154,9 @@ const TaskInput: React.FC<TaskInputProps> = React.memo(
       <Card className="shadow-sm border-0 bg-gray-50/50">
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{label}</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+              {label}
+            </h3>
             <div className="flex gap-2">
               {canEdit && (
                 <>
@@ -327,9 +335,14 @@ const ImportSection: React.FC<{
 const CategorySelector: React.FC<{
   selectedCategory: string;
   setSelectedCategory: any;
-  selectedOption:string;
+  selectedOption: string;
   setSelectedOption: any;
-}> = ({ selectedCategory, setSelectedCategory, selectedOption, setSelectedOption }) => {
+}> = ({
+  selectedCategory,
+  setSelectedCategory,
+  selectedOption,
+  setSelectedOption,
+}) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -337,7 +350,10 @@ const CategorySelector: React.FC<{
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: any) => {
-      if (dropdownRef.current && !dropdownRef?.current?.contains(event.target)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef?.current?.contains(event.target)
+      ) {
         setDropdownOpen(false);
       }
     };
@@ -345,7 +361,7 @@ const CategorySelector: React.FC<{
     if (dropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -385,7 +401,9 @@ const CategorySelector: React.FC<{
           className="w-full flex items-center justify-between border border-gray-300 rounded-md px-3 py-2 bg-white"
         >
           <span className="truncate max-w-[calc(100%-30px)]">
-            {selectedOption ? `${selectedCategory} - ${selectedOption}` : (selectedCategory || "Select Category")}
+            {selectedOption
+              ? `${selectedCategory} - ${selectedOption}`
+              : selectedCategory || "Select Category"}
           </span>
           <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
         </button>
@@ -393,16 +411,19 @@ const CategorySelector: React.FC<{
         {dropdownOpen && (
           <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
             {categoriesData.map((category) => (
-              <div key={category.name} className="border-b border-gray-100 last:border-b-0">
-                <div 
+              <div
+                key={category.name}
+                className="border-b border-gray-100 last:border-b-0"
+              >
+                <div
                   className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
                   onClick={(e) => toggleCategory(category.name, e)}
                 >
                   <span>{category.name}</span>
-                  <ChevronDown 
+                  <ChevronDown
                     className={`h-4 w-4 text-gray-500 transition-transform ${
                       expandedCategory === category.name ? "rotate-180" : ""
-                    }`} 
+                    }`}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleCategory(category.name, e);
@@ -416,7 +437,9 @@ const CategorySelector: React.FC<{
                       <div
                         key={option}
                         className="px-6 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                        onClick={(e) => handleOptionSelect(category.name, option, e)}
+                        onClick={(e) =>
+                          handleOptionSelect(category.name, option, e)
+                        }
                       >
                         {option}
                       </div>
@@ -498,6 +521,28 @@ const MoMForm: React.FC<MoMFormProps> = ({
     setSelectedUserEmails(selectedEmails);
   };
 
+  const generateMoMTitle = useCallback(() => {
+    const today = new Date();
+    const dateStr = new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    }).format(today);
+  
+    const projectName = project?.title || "Project";
+  
+    // Find all client users from project users
+    const clientUsers = projectUsers
+      .filter((user: any) => user.role === "CLIENT")
+      .map((user: any) => `${user.first_name} ${user.last_name}`);
+
+    if (clientUsers.length > 0) {
+      return `${projectName} - ${dateStr} - ${clientUsers.join(", ")}`;
+    } else {
+      return `${projectName} - ${dateStr}`;
+    }
+  }, [project, projectUsers]);
+
   // Initialize form data
   useEffect(() => {
     if (initialData) {
@@ -529,6 +574,8 @@ const MoMForm: React.FC<MoMFormProps> = ({
           setReferenceMomIds([String(initialData.reference_mom_ids)]);
         }
       }
+    } else if (!editMode) {
+      setTitle(generateMoMTitle());
     }
   }, [initialData]);
 
@@ -795,12 +842,12 @@ const MoMForm: React.FC<MoMFormProps> = ({
                     />
                   </div>
                   <div>
-                  <CategorySelector
-                    selectedCategory={selectedCategory}
-                    setSelectedCategory={setSelectedCategory}
-                    selectedOption={selectedOption}
-                    setSelectedOption={setSelectedOption}
-                  />
+                    <CategorySelector
+                      selectedCategory={selectedCategory}
+                      setSelectedCategory={setSelectedCategory}
+                      selectedOption={selectedOption}
+                      setSelectedOption={setSelectedOption}
+                    />
                   </div>
                   {currentUser?.role === UserRole.SUPER_ADMIN && (
                     <div>
