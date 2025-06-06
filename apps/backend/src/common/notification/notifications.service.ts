@@ -20,7 +20,7 @@ export class NotificationsService {
   ) {
     if (!this.socketServer) {
       return;
-  }
+    }
 
     const notification = await this.prisma.notification.create({
       data: { projectId: projectId, message, type },
@@ -36,7 +36,7 @@ export class NotificationsService {
     users.forEach((userId) => {
       this.socketServer
         .to(userId.toString())
-        .emit('notification', { message, projectId, type });
+        .emit('notification', { id: notification.id, message, projectId, type });
     });
 
     return notification;

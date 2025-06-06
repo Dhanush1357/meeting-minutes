@@ -92,8 +92,8 @@ export function MultiSelectUsers({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 flex-none" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
-          <Command>
+        <PopoverContent className="w-full p-0 max-h-52" align="start">
+          <Command className="h-full">
             <CommandInput
               placeholder="Search users..."
               value={searchQuery}
@@ -101,7 +101,7 @@ export function MultiSelectUsers({
             />
             <CommandEmpty>No users found.</CommandEmpty>
             <CommandGroup>
-              <CommandList>
+              <CommandList className="max-h-40 overflow-y-auto overscroll-contain">
                 {users?.map((user) => (
                   <CommandItem
                     key={user.id}

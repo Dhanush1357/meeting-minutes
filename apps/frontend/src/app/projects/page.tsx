@@ -260,7 +260,7 @@ const ProjectsPage: React.FC = () => {
                     className="group text-white hover:text-black relative overflow-hidden bg-[#127285] transition-all duration-300 hover:shadow-md"
                     size="lg"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#DEEEF2] to-[#5ec8e2] opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100" />
                     <span className="relative flex items-center">
                       <PlusCircle className="mr-2 h-5 w-5" />
                       Create Project
@@ -386,7 +386,7 @@ const ProjectsPage: React.FC = () => {
                       <Button 
                         type="submit" 
                         disabled={isLoadingCreation} 
-                        className="w-full text-white hover:text-black sm:w-auto py-2 px-4 bg-[#127285] hover:bg-[#12728586]"
+                        className="w-full text-white hover:text-black sm:w-auto py-2 px-4 bg-[#127285]"
                       >
                         {(isLoadingCreation || isLoadingUsers) && (
                           <Loader2 className="mr-2 h-5 w-5 animate-spin" />

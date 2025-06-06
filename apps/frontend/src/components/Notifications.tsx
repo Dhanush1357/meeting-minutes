@@ -45,7 +45,7 @@ export default function Notifications() {
         ...prev,
       ]);
     });
-
+    console.log("notification===============", notifications)
     return () => {
       socket.off("notification");
     };

@@ -121,11 +121,23 @@ const UsersPage: React.FC = () => {
           </Button>
         );
       },
-      cell: ({ row }) => (
-        <span>
-          {row.original.first_name} {row.original.last_name}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const { first_name, last_name } = row.original;
+
+        if (!first_name && !last_name) {
+          return (
+            <span className="text-muted-foreground text-sm text-red-600">
+              User yet to Login
+            </span>
+          );
+        }
+
+        return (
+          <span>
+            {first_name} {last_name}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "email",
@@ -237,47 +249,52 @@ const UsersPage: React.FC = () => {
         <div className="relative mb-8 rounded-2xl bg-white px-6 py-3 shadow-sm ring-1 ring-gray-100">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Users</h1>
-          </div>
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+                Users
+              </h1>
+            </div>
 
-          {currentUser?.role === UserRole.SUPER_ADMIN && (
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogTrigger asChild>
-                <Button className="group relative overflow-hidden bg-primary transition-all hover:bg-primary/90" size="lg">
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Invite User
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Invite New User</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleInviteUser} className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="user@example.com"
-                        required
-                      />
+            {currentUser?.role === UserRole.SUPER_ADMIN && (
+              <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    className="group relative overflow-hidden bg-primary transition-all hover:bg-primary/90"
+                    size="lg"
+                  >
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Invite User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Invite New User</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleInviteUser} className="space-y-6">
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="user@example.com"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={isInviteLoading}>
-                      {isInviteLoading && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Send Invitation
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
+                    <DialogFooter>
+                      <Button type="submit" disabled={isInviteLoading}>
+                        {isInviteLoading && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Send Invitation
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -306,8 +323,7 @@ const UsersPage: React.FC = () => {
                 Edit User
               </DialogTitle>
               <p className="text-sm text-gray-500">
-                Update user. Changes will take effect
-                immediately.
+                Update user. Changes will take effect immediately.
               </p>
             </DialogHeader>
 

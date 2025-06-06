@@ -101,7 +101,10 @@ export function DataTable<TData, TValue>({
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2 px-4 py-2 rounded-lg">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg"
+            >
               <SlidersHorizontal className="h-4 w-4" />
               <span className="hidden sm:inline">Columns</span>
               <ChevronDown className="h-4 w-4 opacity-50" />
@@ -115,13 +118,13 @@ export function DataTable<TData, TValue>({
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
-                    className="capitalize px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                    className="capitalize"
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) =>
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                    <span className="ml-2">{column.id}</span>
                   </DropdownMenuCheckboxItem>
                 );
               })}

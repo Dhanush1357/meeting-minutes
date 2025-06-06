@@ -301,10 +301,19 @@ const ImportSection: React.FC<{
               <SelectTrigger className="w-full mt-1">
                 <SelectValue placeholder="Select a MoM" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-w-[450px]">
                 {existingMoMs.map((mom: any) => (
-                  <SelectItem key={mom.id} value={String(mom.id)}>
-                    {mom.title} - {formatDate(mom.created_at)}
+                  <SelectItem
+                    key={mom.id}
+                    value={String(mom.id)}
+                    className="max-w-[450px]"
+                  >
+                    <div
+                      className="truncate max-w-[400px]"
+                      title={`${mom.title} - ${formatDate(mom.created_at)}`}
+                    >
+                      {mom.title} - {formatDate(mom.created_at)}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -528,9 +537,9 @@ const MoMForm: React.FC<MoMFormProps> = ({
       month: "2-digit",
       year: "2-digit",
     }).format(today);
-  
+
     const projectName = project?.title || "Project";
-  
+
     // Find all client users from project users
     const clientUsers = projectUsers
       .filter((user: any) => user.role === "CLIENT")
